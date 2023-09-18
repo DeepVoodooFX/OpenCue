@@ -31,6 +31,7 @@ import platform
 import subprocess
 import sys
 import traceback
+import signal
 
 if platform.system() == 'Linux':
     import pwd
@@ -75,7 +76,7 @@ RQD_CREATE_USER_IF_NOT_EXISTS = True
 RQD_TAGS = ''
 RQD_PREPEND_TIMESTAMP = False
 
-KILL_SIGNAL = 9
+KILL_SIGNAL = signal.SIGKILL
 if platform.system() == 'Linux':
     RQD_UID = pwd.getpwnam("daemon")[2]
     RQD_GID = pwd.getpwnam("daemon")[3]
@@ -200,6 +201,10 @@ try:
             FILE_LOG_LEVEL = logging.getLevelName(level)
         if config.has_option(__section, "RQD_PREPEND_TIMESTAMP"):
             RQD_PREPEND_TIMESTAMP = config.getboolean(__section, "RQD_PREPEND_TIMESTAMP")
+        if config.has_option(__section, "KILL_SIGNAL"):
+            kill_name = config.get(__section, "KILL_SIGNAL")
+            KILL_SIGNAL = int(getattr(signal, kill_name))
+
 # pylint: disable=broad-except
 except Exception as e:
     logging.warning(
