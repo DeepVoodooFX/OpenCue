@@ -922,7 +922,7 @@ class Machine(object):
                 if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
                     self.__gpusets.remove(pair[0])
                     self.__gpusets.remove(pair[1])
-                    return ','.join([str(pair[0]), str(pair[1])])
+                    return f'{pair[0]},{pair[1]}'
 
         gpusets = []
         for _ in range(reservedGpus):
