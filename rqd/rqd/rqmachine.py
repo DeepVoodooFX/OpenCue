@@ -913,16 +913,19 @@ class Machine(object):
             log.critical(err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
-        nvlink_pairs = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
-        nvlink_pairs = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in nvlink_pairs]
-        nvlink_pairs = list(set([tuple(sorted(pair)) for pair in nvlink_pairs]))
+        try:
+            if 2 == reservedGpus:
+                nvlink_pairs = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
+                nvlink_pairs = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in nvlink_pairs]
+                nvlink_pairs = list(set([tuple(sorted(pair)) for pair in nvlink_pairs]))
 
-        if 2 == reservedGpus:
-            for pair in nvlink_pairs:
-                if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
-                    self.__gpusets.remove(pair[0])
-                    self.__gpusets.remove(pair[1])
-                    return f'{pair[0]},{pair[1]}'
+                for pair in nvlink_pairs:
+                    if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
+                        self.__gpusets.remove(pair[0])
+                        self.__gpusets.remove(pair[1])
+                        return f'{pair[0]},{pair[1]}'
+        except:
+            pass
 
         gpusets = []
         for _ in range(reservedGpus):
