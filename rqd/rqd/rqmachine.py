@@ -80,6 +80,7 @@ class Machine(object):
         self.__rqCore = rqCore
         self.__coreInfo = coreInfo
         self.__gpusets = set()
+        self.__gpupairs = tuple()
 
         # A dictionary built from /proc/cpuinfo containing
         # { <physical id> : { <core_id> : set([<processor>, <processor>, ...]), ... }, ... }
@@ -440,6 +441,19 @@ class Machine(object):
     # pylint: disable=attribute-defined-outside-init
     def __resetGpuResults(self):
         self.gpuResults = {'count': 0, 'total': 0, 'free': 0, 'used': {}, 'updated': 0}
+
+    def __getGPUpairs(self):
+        nvlink_pairs = ()
+        try:
+            nvlink_pairs = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
+            nvlink_pairs = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in nvlink_pairs]
+            nvlink_pairs = tuple(set([tuple(sorted(pair)) for pair in nvlink_pairs]))
+        except Exception as e:
+            log.warning(
+                'Failed to query gpu pairs due to: %s at %s',
+                e, traceback.extract_tb(sys.exc_info()[2]))
+
+        return nvlink_pairs
 
     def __getGpuValues(self):
         if not hasattr(self, 'gpuNotSupported'):
@@ -806,6 +820,9 @@ class Machine(object):
     def setupGpu(self):
         """ Setup rqd for Gpus """
         self.__gpusets = set(range(self.getGpuCount()))
+        if self.__gpusets:
+            self.__gpupairs = self.__getGPUpairs()
+
 
     def reserveHT(self, frameCores):
         """ Reserve cores for use by taskset
@@ -913,19 +930,12 @@ class Machine(object):
             log.critical(err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
-        try:
-            if 2 == reservedGpus:
-                nvlink_pairs = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
-                nvlink_pairs = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in nvlink_pairs]
-                nvlink_pairs = list(set([tuple(sorted(pair)) for pair in nvlink_pairs]))
-
-                for pair in nvlink_pairs:
-                    if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
-                        self.__gpusets.remove(pair[0])
-                        self.__gpusets.remove(pair[1])
-                        return f'{pair[0]},{pair[1]}'
-        except:
-            pass
+        if 2 == reservedGpus:
+            for pair in self.__gpupairs:
+                if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
+                    self.__gpusets.remove(pair[0])
+                    self.__gpusets.remove(pair[1])
+                    return f'{pair[0]},{pair[1]}'
 
         gpusets = []
         for _ in range(reservedGpus):
