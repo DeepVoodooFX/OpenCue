@@ -445,9 +445,9 @@ class Machine(object):
     def __getGPUpairs(self):
         nvlink_pairs = ()
         try:
-            nvlink_pairs = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
-            nvlink_pairs = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in nvlink_pairs]
-            nvlink_pairs = tuple(set([tuple(sorted(pair)) for pair in nvlink_pairs]))
+            links_out = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
+            links_out = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in links_out]
+            nvlink_pairs = tuple(set([tuple(sorted(pair)) for pair in links_out]))
         except Exception as e:
             log.warning(
                 'Failed to query gpu pairs due to: %s at %s',
@@ -822,6 +822,8 @@ class Machine(object):
         self.__gpusets = set(range(self.getGpuCount()))
         if self.__gpusets:
             self.__gpupairs = self.__getGPUpairs()
+        if len(self.__gpusets) < self.__gpupairs:
+            self.__gpupairs = ()
 
 
     def reserveHT(self, frameCores):
@@ -930,7 +932,7 @@ class Machine(object):
             log.critical(err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
-        if 2 == reservedGpus:
+        if (2 == reservedGpus) and self.__gpupairs:
             for pair in self.__gpupairs:
                 if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
                     self.__gpusets.remove(pair[0])
