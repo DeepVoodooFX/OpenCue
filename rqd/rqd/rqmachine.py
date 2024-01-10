@@ -822,7 +822,7 @@ class Machine(object):
         self.__gpusets = set(range(self.getGpuCount()))
         if self.__gpusets:
             self.__gpupairs = self.__getGPUpairs()
-        if len(self.__gpusets) < self.__gpupairs:
+        if len(self.__gpusets) < len(self.__gpupairs):
             self.__gpupairs = ()
 
 
