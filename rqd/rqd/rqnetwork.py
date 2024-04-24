@@ -144,7 +144,7 @@ class RunningFrame(object):
 
     def kill(self, message=""):
         """Kills the frame"""
-        log.info("Request received: kill")
+        log.info(f"Request received: kill (using {rqd.rqconstants.KILL_SIGNAL})")
         if self.frameAttendantThread is None:
             log.warning(
                 "Kill requested before frameAttendantThread is created for: %s", self.frameId)
