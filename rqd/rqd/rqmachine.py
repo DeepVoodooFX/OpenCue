@@ -80,6 +80,7 @@ class Machine(object):
         self.__rqCore = rqCore
         self.__coreInfo = coreInfo
         self.__gpusets = set()
+        self.__gpupairs = tuple()
 
         # A dictionary built from /proc/cpuinfo containing
         # { <physical id> : { <core_id> : set([<processor>, <processor>, ...]), ... }, ... }
@@ -277,11 +278,11 @@ class Machine(object):
                     child_statm_fields = self._getStatFields(
                         rqd.rqconstants.PATH_PROC_PID_STATM.format(pid))
                     pids[pid]['statm_size'] = \
-                        int(re.search(r"\d+", child_statm_fields[0]).group()) \
-                        if re.search(r"\d+", child_statm_fields[0]) else -1
+                        int(re.search(r"\d+", child_statm_fields[2]).group()) \
+                        if re.search(r"\d+", child_statm_fields[2]) else -1
                     pids[pid]['statm_rss'] = \
-                        int(re.search(r"\d+", child_statm_fields[1]).group()) \
-                        if re.search(r"\d+", child_statm_fields[1]) else -1
+                        int(re.search(r"\d+", child_statm_fields[3]).group()) \
+                        if re.search(r"\d+", child_statm_fields[3]) else -1
 
                 # pylint: disable=broad-except
                 except (OSError, IOError):
@@ -440,6 +441,19 @@ class Machine(object):
     # pylint: disable=attribute-defined-outside-init
     def __resetGpuResults(self):
         self.gpuResults = {'count': 0, 'total': 0, 'free': 0, 'used': {}, 'updated': 0}
+
+    def __getGPUpairs(self):
+        nvlink_pairs = ()
+        try:
+            links_out = subprocess.getoutput('/ParkCounty/apps/lnx/nube-tools/linkQuery').splitlines()
+            links_out = [(int(pair.split(',')[0]), int(pair.split(',')[1])) for pair in links_out]
+            nvlink_pairs = tuple(set([tuple(sorted(pair)) for pair in links_out]))
+        except Exception as e:
+            log.warning(
+                'Failed to query gpu pairs due to: %s at %s',
+                e, traceback.extract_tb(sys.exc_info()[2]))
+
+        return nvlink_pairs
 
     def __getGpuValues(self):
         if not hasattr(self, 'gpuNotSupported'):
@@ -806,6 +820,11 @@ class Machine(object):
     def setupGpu(self):
         """ Setup rqd for Gpus """
         self.__gpusets = set(range(self.getGpuCount()))
+        if self.__gpusets:
+            self.__gpupairs = self.__getGPUpairs()
+        if len(self.__gpusets) < len(self.__gpupairs):
+            self.__gpupairs = ()
+
 
     def reserveHT(self, frameCores):
         """ Reserve cores for use by taskset
@@ -826,7 +845,7 @@ class Machine(object):
         # Prefer to assign cores from the same physical cpu.
         # Spread different frames around on different physical cpus.
         avail_cores = {}
-        avail_cores_count = 0
+        avail_procs_count = 0
         reserved_cores = self.__coreInfo.reserved_cores
 
         for physid, cores in self.__procs_by_physid_and_coreid.items():
@@ -835,14 +854,14 @@ class Machine(object):
                         int(coreid) in reserved_cores[int(physid)].coreid:
                     continue
                 avail_cores.setdefault(physid, set()).add(coreid)
-                avail_cores_count += 1
+                avail_procs_count += len(cores[coreid])
 
-        remaining_cores = frameCores / 100
+        remaining_procs = frameCores / 100
 
-        if avail_cores_count < remaining_cores:
+        if avail_procs_count < remaining_procs:
             err = ('Not launching, insufficient hyperthreading cores to reserve '
                    'based on frameCores (%s < %s)')  \
-                  % (avail_cores_count, remaining_cores)
+                  % (avail_procs_count, remaining_procs)
             log.critical(err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
@@ -854,18 +873,22 @@ class Machine(object):
                 # the most idle cores first.
                 key=lambda tup: len(tup[1]),
                 reverse=True):
-
-            while remaining_cores > 0 and len(cores) > 0:
-                coreid = cores.pop()
-                # Give all the hyperthreads on this core.
-                # This counts as one core.
+            cores = sorted(list(cores), key=lambda _coreid: int(_coreid))
+            while remaining_procs > 0 and len(cores) > 0:
+                # Reserve cores with max threads first
+                # Avoid booking too much threads
+                # ex: if remaining_procs==2, get the next core with 2 threads
+                # ex: if remaining_procs==1, get the next core with 1 thread or any other core
+                coreid = next(iter([cid for cid in cores
+                                    if len(self.__procs_by_physid_and_coreid[physid][cid]) <= remaining_procs]),
+                              cores[0])
+                cores.remove(coreid)
+                procids = self.__procs_by_physid_and_coreid[physid][coreid]
                 reserved_cores[int(physid)].coreid.extend([int(coreid)])
-                remaining_cores -= 1
+                remaining_procs -= len(procids)
+                tasksets.extend(procids)
 
-                for procid in self.__procs_by_physid_and_coreid[physid][coreid]:
-                    tasksets.append(procid)
-
-            if remaining_cores == 0:
+            if remaining_procs == 0:
                 break
 
         log.warning('Taskset: Reserving procs - %s', ','.join(tasksets))
@@ -908,6 +931,13 @@ class Machine(object):
             err = 'Not launching, insufficient GPUs to reserve based on reservedGpus'
             log.critical(err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
+
+        if (2 == reservedGpus) and self.__gpupairs:
+            for pair in self.__gpupairs:
+                if pair[0] in self.__gpusets and pair[1] in self.__gpusets:
+                    self.__gpusets.remove(pair[0])
+                    self.__gpusets.remove(pair[1])
+                    return f'{pair[0]},{pair[1]}'
 
         gpusets = []
         for _ in range(reservedGpus):

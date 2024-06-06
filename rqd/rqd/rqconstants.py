@@ -31,6 +31,7 @@ import platform
 import subprocess
 import sys
 import traceback
+import signal
 
 if platform.system() == 'Linux':
     import pwd
@@ -69,15 +70,13 @@ RQD_USE_IPV6_AS_HOSTNAME = False
 
 # Use the PATH environment variable from the RQD host.
 RQD_USE_PATH_ENV_VAR = False
-# Copy specific environment variable from the RQD host to the frame env.
-RQD_HOST_ENV_VARS = []
 
 RQD_BECOME_JOB_USER = True
 RQD_CREATE_USER_IF_NOT_EXISTS = True
 RQD_TAGS = ''
 RQD_PREPEND_TIMESTAMP = False
 
-KILL_SIGNAL = 9
+KILL_SIGNAL = signal.SIGKILL
 if platform.system() == 'Linux':
     RQD_UID = pwd.getpwnam("daemon")[2]
     RQD_GID = pwd.getpwnam("daemon")[3]
@@ -214,6 +213,9 @@ try:
         if config.has_option(__override_section, "FILE_LOG_LEVEL"):
             level = config.get(__override_section, "FILE_LOG_LEVEL")
             FILE_LOG_LEVEL = logging.getLevelName(level)
+        if config.has_option(__override_section, "KILL_SIGNAL"):
+            kill_name = config.get(__override_section, "KILL_SIGNAL")
+            KILL_SIGNAL = int(getattr(signal, kill_name))
         if config.has_option(__override_section, "RQD_PREPEND_TIMESTAMP"):
             RQD_PREPEND_TIMESTAMP = config.getboolean(__override_section, "RQD_PREPEND_TIMESTAMP")
         if config.has_option(__override_section, "CHECK_INTERVAL_LOCKED"):
