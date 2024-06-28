@@ -29,6 +29,7 @@ import com.imageworks.spcue.grpc.job.LayerType;
 public class LayerDetail extends LayerEntity implements LayerInterface {
     public String command;
     public String range;
+    public String killSignal;
     public LayerType type;
     public int minimumCores;
     public int maximumCores;
@@ -164,6 +165,14 @@ public class LayerDetail extends LayerEntity implements LayerInterface {
 
     public void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+
+    public String getKillSignal() {
+        return killSignal;
+    }
+
+    public void setKillSignal(String killSignal) {
+        this.killSignal = killSignal;
     }
 }
 

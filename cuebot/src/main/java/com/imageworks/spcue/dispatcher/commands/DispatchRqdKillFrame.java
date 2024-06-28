@@ -34,14 +34,16 @@ public class DispatchRqdKillFrame extends KeyRunnable {
     private String message;
     private String hostname;
     private String frameId;
+    private String killSignal;
 
     private final RqdClient rqdClient;
 
-    public DispatchRqdKillFrame(String hostname, String frameId, String message, RqdClient rqdClient) {
+    public DispatchRqdKillFrame(String hostname, String frameId, String message, String killSignal, RqdClient rqdClient) {
         super("disp_rqd_kill_frame_" +  hostname + "_" + frameId + "_" + rqdClient.toString());
         this.hostname = hostname;
         this.frameId = frameId;
         this.message = message;
+        this.killSignal = killSignal;
         this.rqdClient = rqdClient;
     }
 
@@ -49,7 +51,7 @@ public class DispatchRqdKillFrame extends KeyRunnable {
     public void run() {
         long startTime = System.currentTimeMillis();
         try {
-            rqdClient.killFrame(hostname, frameId, message);
+            rqdClient.killFrame(hostname, frameId, message, killSignal);
         } catch (RqdClientException e) {
             logger.info("Failed to contact host " + hostname + ", " + e);
         } finally {

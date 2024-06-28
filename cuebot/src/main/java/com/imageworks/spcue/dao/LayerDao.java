@@ -464,5 +464,20 @@ public interface LayerDao {
      */
     List<String> getLimitNames(LayerInterface layer);
 
+    /**
+     * get a layer killsignal
+     *
+     * @param layer
+     * @param val
+     */
+    String findKillSignal(LayerInterface layer);
+
+    /**
+     * update the layer killsignal
+     *
+     * @param layer
+     * @param signal
+     */
+    void updateKillSignal(LayerInterface layer, String signal);
 }
 

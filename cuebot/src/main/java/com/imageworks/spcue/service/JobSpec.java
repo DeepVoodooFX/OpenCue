@@ -456,6 +456,10 @@ public class JobSpec {
                 layer.timeout_llu = Integer.parseInt(layerTag.getChildTextTrim("timeout_llu"));
             }
 
+            if (layerTag.getChildTextTrim("kill_signal") != null) {
+                layer.killSignal = layerTag.getChildTextTrim("kill_signal");
+            }
+
             /*
              * Handle the layer environment
              */

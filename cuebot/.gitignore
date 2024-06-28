@@ -9,6 +9,7 @@
 /velocity.log
 /out
 /.idea
+/bin
 /nbproject
 /NETBEANS_CLASSPATH_SPECIFIC
 *.iml

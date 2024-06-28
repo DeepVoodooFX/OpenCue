@@ -45,6 +45,7 @@ import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.FrameDetail;
 import com.imageworks.spcue.JobEntity;
 import com.imageworks.spcue.LayerEntity;
+import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.LayerDetail;
 import com.imageworks.spcue.LocalHostAssignment;
 import com.imageworks.spcue.Source;
@@ -593,13 +594,14 @@ public class HostReportHandler {
         }
 
         FrameInterface frame = jobManager.getFrame(proc.frameId);
+        LayerInterface layer = layerDao.getLayer(frame.getLayerId());
         if (dispatcher.isTestMode()) {
             // Different threads don't share the same database state on the test environment
-            (new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), rqdClient,
+            (new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), layer.getKillSignal(), rqdClient,
                     dispatchSupport, dispatcher.isTestMode())).run();
         } else {
             try {
-                killQueue.execute(new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), rqdClient,
+                killQueue.execute(new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), layer.getKillSignal(), rqdClient,
                         dispatchSupport, dispatcher.isTestMode()));
             } catch (TaskRejectedException e) {
                 logger.warn("Unable to add a DispatchRqdKillFrame request, task rejected, " + e);
@@ -615,14 +617,19 @@ public class HostReportHandler {
             return false;
         }
 
+        FrameInterface frame = jobManager.getFrame(frameId);
+        LayerInterface layer = layerDao.getLayer(frame.getLayerId());
+        
         if (dispatcher.isTestMode()) {
             // Different threads don't share the same database state on the test environment
-            (new DispatchRqdKillFrame(hostname, frameId, killCause.toString(), rqdClient)).run();
+
+            (new DispatchRqdKillFrame(hostname, frameId, killCause.toString(), layer.getKillSignal(), rqdClient)).run();
         } else {
             try {
                 killQueue.execute(new DispatchRqdKillFrame(hostname,
                         frameId,
                         killCause.toString(),
+                        layer.getKillSignal(),
                         rqdClient));
             } catch (TaskRejectedException e) {
                 logger.warn("Unable to add a DispatchRqdKillFrame request, task rejected, " + e);

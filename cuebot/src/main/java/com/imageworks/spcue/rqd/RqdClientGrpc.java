@@ -24,6 +24,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.pqc.crypto.rainbow.Layer;
 import org.apache.logging.log4j.LogManager;
 
 import com.google.common.cache.CacheBuilder;
@@ -31,7 +32,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.HostInterface;
+import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.VirtualProc;
 import com.imageworks.spcue.grpc.host.LockState;
 import com.imageworks.spcue.grpc.report.RunningFrameInfo;
@@ -48,6 +51,7 @@ import com.imageworks.spcue.grpc.rqd.RunFrame;
 import com.imageworks.spcue.grpc.rqd.RunningFrameGrpc;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusRequest;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusResponse;
+import com.imageworks.spcue.service.JobManagerService;
 
 public final class RqdClientGrpc implements RqdClient {
     private static final Logger logger = LogManager.getLogger(RqdClientGrpc.class);
@@ -57,6 +61,7 @@ public final class RqdClientGrpc implements RqdClient {
     private final int rqdCacheConcurrency;
     private final int rqdServerPort;
     private final int rqdTaskDeadlineSeconds;
+    private JobManagerService jobManagerService;
     private LoadingCache<String, ManagedChannel> channelCache;
 
     private boolean testMode = false;
@@ -172,14 +177,16 @@ public final class RqdClientGrpc implements RqdClient {
     }
 
     public void killFrame(VirtualProc proc, String message) {
-        killFrame(proc.hostName, proc.frameId, message);
+        LayerInterface layer = jobManagerService.getLayer(proc.getLayerId());
+        killFrame(proc.hostName, proc.frameId, message, layer.getKillSignal());
     }
 
-    public void killFrame(String host, String frameId, String message) {
+    public void killFrame(String host, String frameId, String message, String killSignal) {
         RqdStaticKillRunningFrameRequest request =
                 RqdStaticKillRunningFrameRequest.newBuilder()
                 .setFrameId(frameId)
                 .setMessage(message)
+                .setKillSignal(killSignal)
                 .build();
 
         if (testMode) {

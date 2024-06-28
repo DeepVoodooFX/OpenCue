@@ -128,4 +128,17 @@ public class JobSpecTests extends AbstractTransactionalJUnit4SpringContextTests 
         assertEquals(job.maxGpusOverride, Integer.valueOf(42));
     }
 
+    @Test
+    public void testKillSignal() {
+        String xml = readJobSpec("jobspec_1_14.xml");
+        JobSpec spec = jobLauncher.parse(xml);
+        assertEquals(spec.getDoc().getDocType().getPublicID(),
+                "SPI Cue Specification Language");
+        assertEquals(spec.getDoc().getDocType().getSystemID(),
+                "http://localhost:8080/spcue/dtd/cjsl-1.14.dtd");
+        assertEquals(spec.getJobs().size(), 1);
+        BuildableJob job = spec.getJobs().get(0);
+        LayerDetail layer = job.getBuildableLayers().get(0).layerDetail;
+        assertEquals("SIGTERM", layer.getKillSignal());
+    }
 }

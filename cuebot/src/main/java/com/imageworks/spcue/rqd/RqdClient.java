@@ -98,6 +98,6 @@ public interface RqdClient {
      * @param hostName
      * @param frameId
      */
-    void killFrame(String hostName, String frameId, String message);
+    void killFrame(String hostName, String frameId, String message, String killSignal);
 }
 

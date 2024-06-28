@@ -49,6 +49,7 @@ public class ServantUtil {
                 public String getId() { return _id; }
                 public String getName() {  throw new RuntimeException("not implemented"); }
                 public String getFacilityId() { throw new RuntimeException("not implemented"); }
+                public String getKillSignal() { throw new RuntimeException("not implemented"); }
             });
         }
         return result;

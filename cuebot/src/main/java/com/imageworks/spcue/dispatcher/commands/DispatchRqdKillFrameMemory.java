@@ -39,18 +39,20 @@ public class DispatchRqdKillFrameMemory extends KeyRunnable {
 
     private String message;
     private String hostname;
+    private String killSignal;
     private DispatchSupport dispatchSupport;
     private final RqdClient rqdClient;
     private final boolean isTestMode;
 
     private FrameInterface frame;
 
-    public DispatchRqdKillFrameMemory(String hostname, FrameInterface frame, String message, RqdClient rqdClient,
+    public DispatchRqdKillFrameMemory(String hostname, FrameInterface frame, String message, String killSignal, RqdClient rqdClient,
                                       DispatchSupport dispatchSupport, boolean isTestMode) {
         super("disp_rqd_kill_frame_" + frame.getFrameId() + "_" + rqdClient.toString());
         this.frame = frame;
         this.hostname = hostname;
         this.message = message;
+        this.killSignal = killSignal;
         this.rqdClient = rqdClient;
         this.dispatchSupport = dispatchSupport;
         this.isTestMode = isTestMode;
@@ -61,7 +63,7 @@ public class DispatchRqdKillFrameMemory extends KeyRunnable {
         long startTime = System.currentTimeMillis();
         try {
             if (dispatchSupport.updateFrameMemoryError(frame) && !isTestMode) {
-                rqdClient.killFrame(hostname, frame.getFrameId(), message);
+                rqdClient.killFrame(hostname, frame.getFrameId(), message, killSignal);
             } else {
                 logger.warn("Could not update frame " + frame.getFrameId() +
                         " status to EXIT_STATUS_MEMORY_FAILURE. Canceling kill request!");

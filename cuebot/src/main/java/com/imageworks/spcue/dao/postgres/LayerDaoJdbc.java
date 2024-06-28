@@ -214,6 +214,7 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
                     Lists.newArrayList(rs.getString("str_services").split(",")));
             layer.timeout = rs.getInt("int_timeout");
             layer.timeout_llu = rs.getInt("int_timeout_llu");
+            layer.killSignal = rs.getString("str_kill_signal");
             return layer;
         }
     };
@@ -317,9 +318,10 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
          "int_gpu_mem_min, " +
          "str_services, " +
          "int_timeout," +
-         "int_timeout_llu " +
+         "int_timeout_llu, " +
+         "str_kill_signal " +
      ") " +
-     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
      @Override
      public void insertLayerDetail(LayerDetail l) {
@@ -330,7 +332,7 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
                 StringUtils.join(l.tags," | "), l.type.toString(),
                 l.minimumCores, l.maximumCores, l.isThreadable,
                 l.minimumMemory, l.minimumGpus, l.maximumGpus, l.minimumGpuMemory, StringUtils.join(l.services,","),
-                l.timeout, l.timeout_llu);
+                l.timeout, l.timeout_llu, l.killSignal);
     }
 
     @Override
@@ -885,5 +887,29 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
     public List<String> getLimitNames(LayerInterface layer) {
         return getJdbcTemplate().query(GET_LIMIT_NAMES,
                 LIMIT_NAME_MAPPER, layer.getLayerId());
+    }
+
+    @Override
+    public String findKillSignal(LayerInterface layer) {
+        try {
+            return getJdbcTemplate().queryForObject(
+                    "SELECT str_kill_signal FROM layer WHERE pk_layer=?",
+                    String.class, layer.getLayerId());
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            throw new EmptyResultDataAccessException("The layer " +
+                    layer.getName() + " was not found in " + layer.getJobId() + e, 0);
+        }
+    }
+
+    @Override
+    public void updateKillSignal(LayerInterface layer, String signal) {
+        try {
+            getJdbcTemplate().update(
+                    "UPDATE layer SET str_kill_signal=? WHERE pk_layer=?",
+                    signal, layer.getLayerId());
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            throw new EmptyResultDataAccessException("The layer " +
+                    layer.getName() + " was not found in " + layer.getJobId() + e, 0);
+        }
     }
 }

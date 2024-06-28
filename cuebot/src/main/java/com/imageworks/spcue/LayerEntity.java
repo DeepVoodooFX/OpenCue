@@ -24,6 +24,7 @@ public class LayerEntity extends Entity implements LayerInterface {
     public String showId;
     public String facilityId;
     public String jobId;
+    public String killSignal;
 
     public LayerEntity() { }
 
@@ -37,6 +38,10 @@ public class LayerEntity extends Entity implements LayerInterface {
 
     public String getJobId() {
         return jobId;
+    }
+
+    public String getKillSignal() {
+        return killSignal;
     }
 
     @Override

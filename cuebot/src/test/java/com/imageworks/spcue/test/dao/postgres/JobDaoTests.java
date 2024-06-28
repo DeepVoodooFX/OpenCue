@@ -729,7 +729,6 @@ public class JobDaoTests extends AbstractTransactionalJUnit4SpringContextTests  
         JobDetail job = jobManager.findJobDetail("pipe-dev.cue-testuser_test");
         assertEquals(job.maxCoreUnits, 42000);
         assertEquals(job.maxGpuUnits, 42);
-    }
-}
+    }}
 
 

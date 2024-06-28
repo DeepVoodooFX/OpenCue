@@ -756,6 +756,18 @@ public class LayerDaoTests extends AbstractTransactionalJUnit4SpringContextTests
         List<LimitEntity> limitsB = layerDao.getLimits(layerResultB);
         assertEquals(limitsB.size(), 0);
     }
+
+    @Test
+    @Transactional
+    @Rollback(true)
+    public void testGetKillSignal() {
+        LayerDetail layer = getLayer();
+        layerDao.updateKillSignal(layer, "SIGKILL");
+        assertEquals("SIGKILL", layerDao.findKillSignal(layer));
+
+        layerDao.updateKillSignal(layer, "SIGTERM");
+        assertEquals("SIGTERM", layerDao.findKillSignal(layer));
+    }
 }
 
 
