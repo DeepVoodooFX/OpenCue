@@ -66,7 +66,7 @@ class RqdInterfaceServicer(rqd.compiled_proto.rqd_pb2_grpc.RqdInterfaceServicer)
         log.info("Request received: killRunningFrame")
         frame = self.rqCore.getRunningFrame(request.frame_id)
         if frame:
-            frame.kill(message=request.message)
+            frame.kill(message=request.message, kill_signal=request.kill_signal)
         else:
             log.warning("Wasn't able to find frame(%s) to kill", request.frame_id)
         return rqd.compiled_proto.rqd_pb2.RqdStaticKillRunningFrameResponse()

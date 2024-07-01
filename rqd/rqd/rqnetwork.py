@@ -142,9 +142,9 @@ class RunningFrame(object):
         """Returns the status of the frame"""
         return self.runningFrameInfo()
 
-    def kill(self, message=""):
+    def kill(self, message="", kill_signal=rqd.rqconstants.getKillSignalName(rqd.rqconstants.DEFAULT_KILL_SIGNAL)):
         """Kills the frame"""
-        log.info(f"Request received: kill (using {rqd.rqconstants.KILL_SIGNAL})")
+        log.info("Request received: kill (using %s)", kill_signal)
         if self.frameAttendantThread is None:
             log.warning(
                 "Kill requested before frameAttendantThread is created for: %s", self.frameId)
@@ -160,7 +160,7 @@ class RunningFrame(object):
                     if platform.system() == "Windows":
                         subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
                     else:
-                        os.killpg(self.pid, rqd.rqconstants.KILL_SIGNAL)
+                        os.killpg(self.pid, rqd.rqconstants.getKillSignalValue(kill_signal))
                 finally:
                     log.warning(
                         "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)

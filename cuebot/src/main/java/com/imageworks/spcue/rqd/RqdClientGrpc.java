@@ -202,12 +202,14 @@ public final class RqdClientGrpc implements RqdClient {
     }
 
     public RunningFrameInfo getFrameStatus(VirtualProc proc) {
+        LayerInterface layer = jobManagerService.getLayer(proc.getLayerId());
         try {
             RqdStaticGetRunFrameResponse getRunFrameResponse =
                     getStub(proc.hostName)
                             .getRunFrame(
                                     RqdStaticGetRunFrameRequest.newBuilder()
                                             .setFrameId(proc.frameId)
+                                            .setKillSignal(layer.getKillSignal())
                                             .build());
             RunningFrameStatusResponse frameStatusResponse =
                     getRunningFrameStub(proc.hostName)

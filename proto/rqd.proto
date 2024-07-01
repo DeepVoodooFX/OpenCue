@@ -128,6 +128,7 @@ message RqdStaticGetRunFrameRequest {
     string job_id = 2;
     string layer_id = 3;
     int32 run_frame_id = 4;
+    string kill_signal = 5;
 }
 
 message RqdStaticGetRunFrameResponse {
@@ -147,6 +148,7 @@ message RqdStaticGetRunningFrameStatusResponse {
 message RqdStaticKillRunningFrameRequest {
     string frame_id = 1;
     string message = 2;
+    string kill_signal = 3;
 }
 
 message RqdStaticKillRunningFrameResponse {}
@@ -234,6 +236,7 @@ message RqdStaticUnlockAllResponse {}
 message RunningFrameKillRequest {
     RunFrame run_frame = 1;
     string message = 2;
+    string kill_signal = 3;
 }
 
 message RunningFrameKillResponse {} // Empty

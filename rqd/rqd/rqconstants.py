@@ -76,7 +76,26 @@ RQD_CREATE_USER_IF_NOT_EXISTS = True
 RQD_TAGS = ''
 RQD_PREPEND_TIMESTAMP = False
 
-KILL_SIGNAL = signal.SIGKILL
+DEFAULT_KILL_SIGNAL = signal.SIGKILL
+
+# TODO: possible update to use more signals
+SIGNAL_MAP = {
+    'SIGKILL': signal.SIGKILL,
+    'SIGTERM': signal.SIGTERM,
+    'SIGINT': signal.SIGINT,
+    'SIGHUP': signal.SIGHUP,
+    'SIGQUIT': signal.SIGQUIT,
+    'SIGSTOP': signal.SIGSTOP,
+}
+
+REVERSE_SIGNAL_MAP = {v: k for k, v in SIGNAL_MAP.items()}
+
+def getKillSignalValue(signal_name):
+    return SIGNAL_MAP.get(signal_name.upper(), DEFAULT_KILL_SIGNAL)
+
+def getKillSignalName(signal_value):
+    return REVERSE_SIGNAL_MAP.get(signal_value, REVERSE_SIGNAL_MAP[DEFAULT_KILL_SIGNAL])
+
 if platform.system() == 'Linux':
     RQD_UID = pwd.getpwnam("daemon")[2]
     RQD_GID = pwd.getpwnam("daemon")[3]
@@ -213,9 +232,9 @@ try:
         if config.has_option(__override_section, "FILE_LOG_LEVEL"):
             level = config.get(__override_section, "FILE_LOG_LEVEL")
             FILE_LOG_LEVEL = logging.getLevelName(level)
-        if config.has_option(__override_section, "KILL_SIGNAL"):
-            kill_name = config.get(__override_section, "KILL_SIGNAL")
-            KILL_SIGNAL = int(getattr(signal, kill_name))
+        if config.has_option(__override_section, "DEFAULT_KILL_SIGNAL"):
+            kill_signal = config.get(__override_section, "DEFAULT_KILL_SIGNAL")
+            DEFAULT_KILL_SIGNAL = config.get_signal_value(kill_signal)
         if config.has_option(__override_section, "RQD_PREPEND_TIMESTAMP"):
             RQD_PREPEND_TIMESTAMP = config.getboolean(__override_section, "RQD_PREPEND_TIMESTAMP")
         if config.has_option(__override_section, "CHECK_INTERVAL_LOCKED"):

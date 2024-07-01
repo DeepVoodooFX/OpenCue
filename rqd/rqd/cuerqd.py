@@ -53,10 +53,15 @@ class RqdHost(object):
         """Fetches and returns the host status report."""
         return self.stub.ReportStatus(rqd.compiled_proto.rqd_pb2.RqdStaticReportStatusRequest())
 
-    def getRunningFrame(self, frameId):
+    def getRunningFrame(self, frameId, kill_signal=None):
         """Returns the host's currently running frame."""
-        return self.stub.GetRunFrame(
-            rqd.compiled_proto.rqd_pb2.RqdStaticGetRunFrameRequest(frame_id=frameId))
+        request = rqd.compiled_proto.rqd_pb2.RqdStaticGetRunFrameRequest(frame_id=frameId)
+        
+        if kill_signal is not None:
+            kill_signal_name = rqd.rqconstants.getKillSignalName(kill_signal)
+            request.kill_signal = kill_signal_name
+        
+        return self.stub.GetRunFrame(request)
 
     def nimbyOff(self):
         """Disables Nimby on the host."""
@@ -133,10 +138,15 @@ class RqdHost(object):
         self.stub.LaunchFrame(
             rqd.compiled_proto.rqd_pb2.RqdStaticLaunchFrameRequest(run_frame=frame))
 
-    def killFrame(self, frameId, message):
+    def killFrame(self, frameId, message, kill_signal=rqd.rqconstants.getKillSignalName(rqd.rqconstants.DEFAULT_KILL_SIGNAL)):
         """Kills a frame on the host."""
         runFrame = self.getRunningFrame(frameId)
-        self.frameStub.Kill(run_frame=runFrame, message=message)
+        request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
+            run_frame=runFrame,
+            message=message,
+            kill_signal=str(kill_signal)
+        )
+        self.frameStub.Kill(request)
 
 
 def main():
@@ -183,8 +193,11 @@ def main():
     parser.add_argument(
         '--reboot_now', action='store_true', help='KILL ALL running frames and REBOOT machine')
     parser.add_argument(
-        '--kill', metavar='frameID', nargs='+',
-        help='Attempts to kill the given frame via its ICE proxy')
+        '--kill', metavar=('frameID', 'message'), nargs=2,
+        help='Attempts to kill the given frame via its ICE proxy.')
+    parser.add_argument(
+        '--kill-signal', metavar=('frameID', 'message', 'signal'), nargs=3,
+        help='Attempts to kill the given frame via its ICE proxy with a specified signal.')
     parser.add_argument(
         '--getproxy', metavar='frameID', nargs='+', help='Returns the proxy for the given frameid')
     parser.add_argument(
@@ -250,8 +263,12 @@ def main():
         rqdHost.rebootIdle()
 
     if args.kill is not None:
-        for arg in args.kill:
-            rqdHost.killFrame(arg, "Killed by %s using cuerqd.py" % os.environ.get("USER"))
+        frameId, message = args.kill
+        rqdHost.killFrame(frameId, "Killed by %s using cuerqd.py: %s" % (os.environ.get("USER"), message))
+
+    if args.kill_signal is not None:
+        frameId, message, signal = args.kill_signal
+        rqdHost.killFrame(frameId, "Killed by %s using signal %s using cuerqd.py: %s" % (os.environ.get("USER"), signal, message), signal)
 
     if args.getproxy is not None:
         for arg in args.getproxy:
