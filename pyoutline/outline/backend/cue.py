@@ -333,6 +333,9 @@ def _serialize(launcher, use_pycuerun):
         if layer.get_arg("memory"):
             sub_element(spec_layer, "memory", "%s" % (layer.get_arg("memory")))
 
+        if(layer.get_arg("kill_signal")):
+            sub_element(spec_layer, "kill_signal", "%s" % (layer.get_arg("kill_signal")))
+
         gpus = None
         if layer.get_arg("gpus"):
             if spec_version >= Version("1.12"):

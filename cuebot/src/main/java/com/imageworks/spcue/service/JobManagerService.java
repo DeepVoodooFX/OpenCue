@@ -171,10 +171,13 @@ public class JobManagerService implements JobManager {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void launchJobSpec(JobSpec spec) {
+        System.out.println("1 Launching job spec: " + spec.getJobs());
 
         for (BuildableJob job: spec.getJobs()) {
+            System.out.println("2 Creating job: " + job);
 
             JobDetail d = createJob(job);
+            System.out.println("10 Created job: " + d.getName());
             if (job.maxCoresOverride != null) {
                 jobDao.updateMaxCores(d,
                     Convert.coresToWholeCoreUnits(job.maxCoresOverride.intValue()));
@@ -189,6 +192,8 @@ public class JobManagerService implements JobManager {
                 createJob(postJob);
                 jobDao.mapPostJob(job);
             }
+
+            System.out.println("11 Updated job: " + d.getName());
         }
 
         for (BuildableDependency dep: spec.getDepends()) {
@@ -196,18 +201,25 @@ public class JobManagerService implements JobManager {
             dependManager.createDepend(dep);
         }
 
+        System.out.println("12 Job depend passed.");
+
         for (BuildableJob job: spec.getJobs()) {
             jobDao.activateJob(job.detail, JobState.PENDING);
             if (job.getPostJob() != null) {
                 jobDao.activateJob(job.getPostJob().detail, JobState.POSTED);
             }
         }
+
+        System.out.println("13 Job activated.");
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public JobDetail createJob(BuildableJob buildableJob) {
 
+        System.out.println("3 Creating job: " + buildableJob.detail.name);
+
         logger.info("creating new job: " + buildableJob.detail.name);
+
         long startTime = System.currentTimeMillis();
 
         if (jobDao.exists(buildableJob.detail.name)) {
@@ -220,6 +232,8 @@ public class JobManagerService implements JobManager {
         }
 
         JobDetail job = buildableJob.detail;
+
+        System.out.println("4 Job name: " + job.name);
 
         try {
             /*
@@ -242,6 +256,8 @@ public class JobManagerService implements JobManager {
             job.showId = show.id;
             job.logDir = job.name;
 
+            System.out.println("5 Show ID: " + job.showId);
+
             /*
              * The job gets inserted into the root group and
              * unknown department.
@@ -252,14 +268,21 @@ public class JobManagerService implements JobManager {
 
             resolveFacility(job);
 
+            System.out.println("6 Facility ID: " + job.facilityId);
+
             jobDao.insertJob(job, jobLogUtil);
             jobDao.insertEnvironment(job, buildableJob.env);
 
+            System.out.println("7 Job inserted: " + job.name);
+
             for (BuildableLayer buildableLayer: buildableJob.getBuildableLayers()) {
+                System.out.println("Creating layer: " + buildableLayer.layerDetail.name);
 
                 LayerDetail layer = buildableLayer.layerDetail;
                 layer.jobId = job.id;
                 layer.showId = show.id;
+                
+                System.out.println("Layer show ID: " + layer.showId);
 
                 /** Not accurate anymore */
                 List<Integer> frames = CueUtil.normalizeFrameRange(layer.range,
@@ -274,21 +297,29 @@ public class JobManagerService implements JobManager {
                     }
                 }
 
+                System.out.println("Layer total frame count: " + layer.totalFrameCount);
+
                 if (layer.minimumCores < Dispatcher.CORE_POINTS_RESERVED_MIN) {
                     layer.minimumCores =  Dispatcher.CORE_POINTS_RESERVED_MIN;
                 }
 
                 logger.info("creating layer " + layer.name + " range: " + layer.range);
                 layerDao.insertLayerDetail(layer);
+                System.out.println("Layer detail inserted: " + layer.name);
                 layerDao.insertLayerEnvironment(layer, buildableLayer.env);
+                System.out.println("Layer environment inserted: " + layer.name);
                 layer.limits.stream()
                         .forEach(ln -> addLayerLimit(layer, limitDao.findLimit(ln).getLimitId()));
+                System.out.println("Layer limits added: " + layer.limits);
                 frameDao.insertFrames(layer, frames);
+                System.out.println("Layer frames inserted: " + layer.name);
             }
 
             // The priority of a job is set on it's resource entry.
             // To update it we set the priority after it's been inserted.
             jobDao.updatePriority(job, job.priority);
+
+            System.out.println("8 Job priority updated: " + job.name);
 
             /*
              * Finally, run any filters on the job which may set the job's
@@ -296,6 +327,7 @@ public class JobManagerService implements JobManager {
              */
             filterManager.runFiltersOnJob(job);
 
+            System.out.println("9 Job finish creation: " + job.name);
             CueUtil.logDuration(startTime, "created job " + job.getName() + " " + job.getId());
             return job;
 

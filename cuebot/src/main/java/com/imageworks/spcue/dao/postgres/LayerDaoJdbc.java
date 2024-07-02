@@ -326,13 +326,20 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
      @Override
      public void insertLayerDetail(LayerDetail l) {
         l.id =  SqlUtil.genKeyRandom();
-        getJdbcTemplate().update(INSERT_LAYER,
-                l.id, l.jobId, l.name, l.command,
-                l.range, l.chunkSize, l.dispatchOrder,
-                StringUtils.join(l.tags," | "), l.type.toString(),
-                l.minimumCores, l.maximumCores, l.isThreadable,
-                l.minimumMemory, l.minimumGpus, l.maximumGpus, l.minimumGpuMemory, StringUtils.join(l.services,","),
-                l.timeout, l.timeout_llu, l.killSignal);
+        if(l.killSignal == null) { l.killSignal = "SIGKILL"; }
+
+        System.out.println("Kill Signal: " + l.killSignal);
+        try {
+            getJdbcTemplate().update(INSERT_LAYER,
+            l.id, l.jobId, l.name, l.command,
+            l.range, l.chunkSize, l.dispatchOrder,
+            StringUtils.join(l.tags," | "), l.type.toString(),
+            l.minimumCores, l.maximumCores, l.isThreadable,
+            l.minimumMemory, l.minimumGpus, l.maximumGpus, l.minimumGpuMemory, StringUtils.join(l.services,","),
+            l.timeout, l.timeout_llu, l.killSignal);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
