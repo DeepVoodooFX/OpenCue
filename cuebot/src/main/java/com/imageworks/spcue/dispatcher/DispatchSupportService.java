@@ -387,7 +387,7 @@ public class DispatchSupportService implements DispatchSupport {
                 .setResourceId(proc.getProcId())
                 .setNumCores(proc.coresReserved)
                 .setNumGpus(proc.gpusReserved)
-                .setKillSignal(layerDao.getLayer(frame.getLayerId()))
+                .setKillSignal(layerDao.getLayer(frame.getLayerId()).getKillSignal())
                 .setStartTime(System.currentTimeMillis())
                 .setIgnoreNimby(proc.isLocalDispatch)
                 .putAllEnvironment(jobDao.getEnvironment(frame))
