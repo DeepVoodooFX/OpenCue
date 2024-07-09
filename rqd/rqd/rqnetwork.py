@@ -76,6 +76,7 @@ class RunningFrame(object):
         self.stime = 0
 
         self.lluTime = 0
+        self.killSignal = runFrame.kill_signal
         self.childrenProcs = {}
 
     def runningFrameInfo(self):
@@ -98,6 +99,7 @@ class RunningFrame(object):
             num_gpus=self.runFrame.num_gpus,
             max_used_gpu_memory=self.maxUsedGpuMemory,
             used_gpu_memory=self.usedGpuMemory,
+            kill_signal=self.runFrame.kill_signal,
             children=self._serializeChildrenProcs()
         )
         return runningFrameInfo
@@ -142,9 +144,10 @@ class RunningFrame(object):
         """Returns the status of the frame"""
         return self.runningFrameInfo()
 
-    def kill(self, message="", kill_signal=rqd.rqconstants.getKillSignalName(rqd.rqconstants.DEFAULT_KILL_SIGNAL)):
+    def kill(self, message=""):
         """Kills the frame"""
-        log.info("Request received: kill (using %s)", kill_signal)
+        print("Request received: kill (using %s)", self.killSignal)
+        log.info("Request received: kill (using %s)", self.killSignal)
         if self.frameAttendantThread is None:
             log.warning(
                 "Kill requested before frameAttendantThread is created for: %s", self.frameId)
@@ -160,7 +163,9 @@ class RunningFrame(object):
                     if platform.system() == "Windows":
                         subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
                     else:
-                        os.killpg(self.pid, rqd.rqconstants.getKillSignalValue(kill_signal))
+                        log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)
+                        print("Killing frameId=%s pid=%s with signal %s" % (self.frameId, self.pid, self.killSignal))
+                        os.killpg(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
                 finally:
                     log.warning(
                         "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)

@@ -183,6 +183,7 @@ class FrameAttendantThread(threading.Thread):
             print("%-21s%s" % ("renderHost",
                                               self.rqCore.machine.getHostname()), file=self.rqlog)
             print("%-21s%s" % ("jobId", self.runFrame.job_id), file=self.rqlog)
+            print("%-21s%s" % ("kill signal", self.runFrame.kill_signal), file=self.rqlog)
             print("%-21s%s" % ("frameId", self.runFrame.frame_id), file=self.rqlog)
             for env in sorted(self.frameEnv):
                 print("%-21s%s=%s" % ("env", env, self.frameEnv[env]), file=self.rqlog)
@@ -555,6 +556,8 @@ class FrameAttendantThread(threading.Thread):
                     except Exception as e:
                         err = "Failed to chmod log file! %s due to %s" % (runFrame.log_dir_file, e)
                         log.warning(err)
+
+                # TODO: possible update 
 
                 finally:
                     rqd.rqutil.permissionsLow()

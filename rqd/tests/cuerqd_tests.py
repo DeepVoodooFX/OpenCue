@@ -188,29 +188,13 @@ class CueRqdTests(unittest.TestCase):
 
     def test_killFrame(self, stubMock, frameStubMock):
         frameId = 'arbitrary-frame-id'
-        runFrame = rqd.compiled_proto.rqd_pb2.RunFrame(frame_id=frameId)
+        runFrame = rqd.compiled_proto.rqd_pb2.RunFrame(frame_id=frameId, kill_signal="SIGTERM")
         stubMock.return_value.GetRunFrame.return_value = runFrame
         sys.argv = [SCRIPT_NAME, RQD_HOSTNAME, '--kill', frameId, 'arbitrary-message']
 
         rqd.cuerqd.main()
 
         excepted_message = "Killed by %s using cuerqd.py: arbitrary-message" % os.environ.get("USER")
-        request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
-            run_frame=runFrame,
-            message=excepted_message,
-            kill_signal="SIGKILL"
-        )
-        frameStubMock.return_value.Kill.assert_called_with(request)
-
-    def test_killFrameSignal(self, stubMock, frameStubMock):
-        frameId = 'arbitrary-frame-id'
-        runFrame = rqd.compiled_proto.rqd_pb2.RunFrame(frame_id=frameId)
-        stubMock.return_value.GetRunFrame.return_value = runFrame
-        sys.argv = [SCRIPT_NAME, RQD_HOSTNAME, '--kill-signal', frameId, 'arbitrary-message', 'SIGTERM']
-
-        rqd.cuerqd.main()
-
-        excepted_message = "Killed by %s using signal SIGTERM using cuerqd.py: arbitrary-message" % os.environ.get("USER")
         request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
             run_frame=runFrame,
             message=excepted_message,

@@ -58,7 +58,7 @@ class RqdHost(object):
         request = rqd.compiled_proto.rqd_pb2.RqdStaticGetRunFrameRequest(frame_id=frameId)
         
         if kill_signal is not None:
-            kill_signal_name = rqd.rqconstants.getKillSignalName(kill_signal)
+            kill_signal_name = rqd.rqconstants.get_kill_signal_name(kill_signal)
             request.kill_signal = kill_signal_name
         
         return self.stub.GetRunFrame(request)
@@ -138,13 +138,13 @@ class RqdHost(object):
         self.stub.LaunchFrame(
             rqd.compiled_proto.rqd_pb2.RqdStaticLaunchFrameRequest(run_frame=frame))
 
-    def killFrame(self, frameId, message, kill_signal=rqd.rqconstants.getKillSignalName(rqd.rqconstants.DEFAULT_KILL_SIGNAL)):
+    def killFrame(self, frameId, message):
         """Kills a frame on the host."""
         runFrame = self.getRunningFrame(frameId)
         request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
             run_frame=runFrame,
             message=message,
-            kill_signal=str(kill_signal)
+            kill_signal=runFrame.kill_signal
         )
         self.frameStub.Kill(request)
 
@@ -195,9 +195,6 @@ def main():
     parser.add_argument(
         '--kill', metavar=('frameID', 'message'), nargs=2,
         help='Attempts to kill the given frame via its ICE proxy.')
-    parser.add_argument(
-        '--kill-signal', metavar=('frameID', 'message', 'signal'), nargs=3,
-        help='Attempts to kill the given frame via its ICE proxy with a specified signal.')
     parser.add_argument(
         '--getproxy', metavar='frameID', nargs='+', help='Returns the proxy for the given frameid')
     parser.add_argument(
@@ -265,10 +262,6 @@ def main():
     if args.kill is not None:
         frameId, message = args.kill
         rqdHost.killFrame(frameId, "Killed by %s using cuerqd.py: %s" % (os.environ.get("USER"), message))
-
-    if args.kill_signal is not None:
-        frameId, message, signal = args.kill_signal
-        rqdHost.killFrame(frameId, "Killed by %s using signal %s using cuerqd.py: %s" % (os.environ.get("USER"), signal, message), signal)
 
     if args.getproxy is not None:
         for arg in args.getproxy:

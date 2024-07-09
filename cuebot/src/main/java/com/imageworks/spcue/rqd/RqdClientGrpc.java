@@ -177,16 +177,14 @@ public final class RqdClientGrpc implements RqdClient {
     }
 
     public void killFrame(VirtualProc proc, String message) {
-        LayerInterface layer = jobManagerService.getLayer(proc.getLayerId());
-        killFrame(proc.hostName, proc.frameId, message, layer.getKillSignal());
+        killFrame(proc.hostName, proc.frameId, message);
     }
 
-    public void killFrame(String host, String frameId, String message, String killSignal) {
+    public void killFrame(String host, String frameId, String message) {
         RqdStaticKillRunningFrameRequest request =
                 RqdStaticKillRunningFrameRequest.newBuilder()
                 .setFrameId(frameId)
                 .setMessage(message)
-                .setKillSignal(killSignal)
                 .build();
 
         if (testMode) {

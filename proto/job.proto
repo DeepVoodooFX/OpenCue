@@ -424,6 +424,8 @@ enum FrameState {
     EATEN = 6;
     // Frame is checkpointing
     CHECKPOINT = 7;
+    // Frame is terminating
+    TERMINATING = 8;
 }
 
 // Defines the possible states of a job.

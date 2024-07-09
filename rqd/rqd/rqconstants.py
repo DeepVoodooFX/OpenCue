@@ -67,6 +67,7 @@ RQD_RETRY_STARTUP_CONNECT_DELAY = 30
 RQD_RETRY_CRITICAL_REPORT_DELAY = 30
 RQD_USE_IP_AS_HOSTNAME = True
 RQD_USE_IPV6_AS_HOSTNAME = False
+RQD_HOST_ENV_VARS = []
 
 # Use the PATH environment variable from the RQD host.
 RQD_USE_PATH_ENV_VAR = False
@@ -78,23 +79,30 @@ RQD_PREPEND_TIMESTAMP = False
 
 DEFAULT_KILL_SIGNAL = signal.SIGKILL
 
-# TODO: possible update to use more signals
-SIGNAL_MAP = {
-    'SIGKILL': signal.SIGKILL,
-    'SIGTERM': signal.SIGTERM,
-    'SIGINT': signal.SIGINT,
-    'SIGHUP': signal.SIGHUP,
-    'SIGQUIT': signal.SIGQUIT,
-    'SIGSTOP': signal.SIGSTOP,
-}
+signal_dict = {name: getattr(signal, name) for name in dir(signal) 
+                if name.startswith('SIG') and not name.startswith('SIG_')}
 
-REVERSE_SIGNAL_MAP = {v: k for k, v in SIGNAL_MAP.items()}
+def get_signal(signal_name):
+    signal_name = signal_name.upper()
+    if not signal_name.startswith('SIG'):
+        signal_name = 'SIG' + signal_name
 
-def getKillSignalValue(signal_name):
-    return SIGNAL_MAP.get(signal_name.upper(), DEFAULT_KILL_SIGNAL)
+    if signal_name in signal_dict:
+        return signal_dict[signal_name]
+    else:
+        raise ValueError(f"Invalid signal name: {signal_name}")
 
-def getKillSignalName(signal_value):
-    return REVERSE_SIGNAL_MAP.get(signal_value, REVERSE_SIGNAL_MAP[DEFAULT_KILL_SIGNAL])
+def get_kill_signal_value(signal_name):
+    try:
+        return get_signal(signal_name)
+    except ValueError:
+        return DEFAULT_KILL_SIGNAL
+
+def get_kill_signal_name(signal_value):
+    try:
+        return signal_value.name
+    except AttributeError:
+        return f"UNKNOWN_SIGNAL_{signal_value}"
 
 if platform.system() == 'Linux':
     RQD_UID = pwd.getpwnam("daemon")[2]

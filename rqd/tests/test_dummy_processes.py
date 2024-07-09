@@ -9,42 +9,42 @@ from outline.modules.shell import Shell
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def create_and_submit_job(scenario):
-    logger.debug("Starting create_and_submit_job function")
+def create_and_submit_job(scenario, wait_time):
+    logger.info("Starting create_and_submit_job function")
     job_name = f"dummy_job_{scenario}_{int(time.time())}"
-    logger.debug(f"Generated job name: {job_name}")
+    logger.info(f"Generated job name: {job_name}")
 
     try:
-        logger.debug("Creating Outline object")
+        logger.info("Creating Outline object")
         ol = Outline(job_name, 
                      show=os.getenv('CUE_JOB_SHOW', 'testing'), 
                      shot=os.getenv('CUE_JOB_SHOT', 'default'), 
                      user=os.environ.get('USER', 'unknown'))
         
-        logger.debug("Creating dummy layer")
-        train_cmd = f"""/ParkCounty/apps/lnx-exo/cuedev/OpenCue/rqd/tests/test_dummy_processes.py"""
-        dummy_layer = Shell("dummy_layer", command=train_cmd.split(), kill_signal="SIGTERM", threadable=True)
+        logger.info("Creating dummy layer")
+        dummy_command = f"""python3 /ParkCounty/apps/lnx-exo/cuedev/Opencue/rqd/tests/dummy_processes.py --scenario {scenario} --wait-time {wait_time}"""
+        dummy_layer = Shell("dummy_layer", command=dummy_command.split(), kill_signal="SIGTERM", threadable=True)
         ol.add_layer(dummy_layer)
         
-        logger.debug("Launching job")
+        logger.info("Launching job")
         result = cuerun.launch(ol, range="1-1", use_pycuerun=False)
-        logger.debug(f"cuerun.launch returned: {result}")
+        logger.info(f"cuerun.launch returned: {result}")
 
         if isinstance(result, list):
-            logger.debug("Result is a list, attempting to get first job")
+            logger.info("Result is a list, attempting to get first job")
             job = result[0] if result else None
         else:
-            logger.debug("Result is not a list, assuming it's a single job")
+            logger.info("Result is not a list, assuming it's a single job")
             job = result
         
         if job:
             try:
                 logger.info(f"Submitted job: {job.name()}")
-                logger.debug(f"Job details - ID: {job.id()}, State: {job.state()}")
+                logger.info(f"Job details - ID: {job.id()}, State: {job.state()}")
                 return job
             except AttributeError as e:
                 logger.error(f"Unexpected job object structure: {e}")
-                logger.debug(f"Job object: {job}")
+                logger.info(f"Job object: {job}")
                 return None
         else:
             logger.error("No job was created")
@@ -52,8 +52,29 @@ def create_and_submit_job(scenario):
 
     except Exception as e:
         logger.error(f"Error in create_and_submit_job: {e}")
-        logger.debug("Exception details", exc_info=True)
+        logger.info("Exception details", exc_info=True)
         return None
+
+def monitor_frame_states(job):
+    frames = job.getFrames()
+    for frame in frames:
+        state_code = frame.state()
+        state_name = get_frame_state_name(state_code)
+        logger.info(f"Frame {frame.number()} state: {state_name} (State code: {state_code})")
+        logger.debug(f"Frame details - ID: {frame.id()}, Layer: {frame.layer()}")
+        
+def get_frame_state_name(state_code):
+    state_names = {
+        0: "WAITING",
+        1: "SETUP",
+        2: "RUNNING",
+        3: "SUCCEEDED",
+        4: "DEPEND",
+        5: "DEAD",
+        6: "EATEN",
+        7: "CHECKPOINT"
+    }
+    return state_names.get(state_code, f"UNKNOWN({state_code})")
 
 def monitor_job(job, wait_time):
     if not job:
@@ -97,26 +118,6 @@ def monitor_job(job, wait_time):
                         elif state == opencue.api.job_pb2.DEAD:
                             logger.info("Job was successfully killed")
                             return job
-                    
-                    logger.warning("Job did not reach FINISHED or DEAD state after kill request")
-                    logger.info("Attempting force kill")
-                    job.kill(force=True)
-                    
-                    # Wait again after force kill to check if it's finished or dead
-                    for _ in range(6):
-                        time.sleep(5)
-                        job = opencue.api.getJob(job.id())
-                        state = job.state()
-                        logger.info(f"Job State after force kill: {state}")
-                        if state == opencue.api.job_pb2.FINISHED:
-                            logger.info("Job completed successfully after force kill")
-                            return job
-                        elif state == opencue.api.job_pb2.DEAD:
-                            logger.info("Job was successfully force killed")
-                            return job
-                    
-                    logger.error("Job failed to reach terminal state even after force kill")
-                        
                 except Exception as e:
                     logger.error(f"Failed to kill job {job.name()}: {e}")
                 break
@@ -134,34 +135,70 @@ def monitor_job(job, wait_time):
     logger.warning(f"Job monitoring ended without reaching a terminal state. Final state: {state}")
     return job
 
+def get_job_state_name(state_code):
+    state_names = {
+        0: "PENDING",
+        1: "FINISHED",
+        2: "STARTUP",
+        3: "SHUTDOWN",
+        4: "POSTED",
+    }
+    return state_names.get(state_code, f"UNKNOWN({state_code})")
+
+def submit_and_monitor(scenario, wait_time):
+    job = create_and_submit_job(scenario, wait_time)
+    if job:
+        initial_state_code = job.state()
+        initial_state_name = get_job_state_name(initial_state_code)
+        logger.info(f"Immediate job state: {initial_state_name} (State code: {initial_state_code})")
+        
+        job = monitor_job(job, wait_time)
+
+        if job:
+            final_state_code = job.state()
+            final_state_name = get_job_state_name(final_state_code)
+            logger.info(f"Final Job State: {final_state_name} (State code: {final_state_code})")
+            
+            # Log detailed job information
+            log_detailed_job_info(job)
+            
+            if final_state_code == opencue.api.job_pb2.FINISHED:
+                logger.info("Job completed successfully")
+            elif final_state_code == opencue.api.job_pb2.DEAD:
+                logger.info("Job was terminated (killed or failed)")
+            else:
+                logger.warning(f"Job ended in non-terminal state: {final_state_name}")
+        else:
+            logger.error("Failed to monitor job")
+    else:
+        logger.error("Failed to create and submit job")
+
+def log_detailed_job_info(job):
+    logger.info("Detailed Job Information:")
+    logger.info(f"  Name: {job.name()}")
+    logger.info(f"  ID: {job.id()}")
+    logger.info(f"  State: {get_job_state_name(job.state())}")
+    logger.info(f"  Start Time: {job.startTime()}")
+    logger.info(f"  Stop Time: {job.stopTime()}")
+    
+    frames = job.getFrames()
+    for frame in frames:
+        logger.info(f"  Frame {frame.number()}:")
+        logger.info(f"    State: {get_frame_state_name(frame.state())}")
+        logger.info(f"    Exit Status: {frame.exitStatus()}")
+        logger.info(f"    Start Time: {frame.startTime()}")
+        logger.info(f"    Stop Time: {frame.stopTime()}")
+        logger.info(f"    Run Time: {frame.runTime()}")
+
 def main():
     parser = argparse.ArgumentParser(description="OpenCue job submission and monitoring")
-    parser.add_argument("--mode", choices=["submit"], required=True,
-                        help="Mode: submit job")
     parser.add_argument("--scenario", choices=["success", "failure", "hang"], required=True,
                         help="Scenario to simulate: success, failure, or hang")
     parser.add_argument("--wait-time", type=int, default=5,
                         help="Time to wait before terminating the job (in seconds)")
     args = parser.parse_args()
 
-    if args.mode == "submit":
-        job = create_and_submit_job(args.scenario)
-        if job:
-            logger.info(f"Immediate job state: {job.state()}")
-            job = monitor_job(job, args.wait_time)
-            if job:
-                final_state = job.state()
-                logger.info(f"Final Job State: {final_state}")
-                if final_state == opencue.api.job_pb2.FINISHED:
-                    logger.info("Job completed successfully")
-                elif final_state == opencue.api.job_pb2.DEAD:
-                    logger.info("Job was terminated (killed or failed)")
-                else:
-                    logger.warning(f"Job ended in non-terminal state: {final_state}")
-            else:
-                logger.error("Failed to monitor job")
-        else:
-            logger.error("Failed to create and submit job")
+    submit_and_monitor(args.scenario, args.wait_time)
 
 if __name__ == "__main__":
     main()

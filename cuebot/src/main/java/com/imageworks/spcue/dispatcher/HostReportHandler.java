@@ -594,14 +594,13 @@ public class HostReportHandler {
         }
 
         FrameInterface frame = jobManager.getFrame(proc.frameId);
-        LayerInterface layer = layerDao.getLayer(frame.getLayerId());
         if (dispatcher.isTestMode()) {
             // Different threads don't share the same database state on the test environment
-            (new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), layer.getKillSignal(), rqdClient,
+            (new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), rqdClient,
                     dispatchSupport, dispatcher.isTestMode())).run();
         } else {
             try {
-                killQueue.execute(new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), layer.getKillSignal(), rqdClient,
+                killQueue.execute(new DispatchRqdKillFrameMemory(hostname, frame, killCause.toString(), rqdClient,
                         dispatchSupport, dispatcher.isTestMode()));
             } catch (TaskRejectedException e) {
                 logger.warn("Unable to add a DispatchRqdKillFrame request, task rejected, " + e);
@@ -618,18 +617,16 @@ public class HostReportHandler {
         }
 
         FrameInterface frame = jobManager.getFrame(frameId);
-        LayerInterface layer = layerDao.getLayer(frame.getLayerId());
         
         if (dispatcher.isTestMode()) {
             // Different threads don't share the same database state on the test environment
 
-            (new DispatchRqdKillFrame(hostname, frameId, killCause.toString(), layer.getKillSignal(), rqdClient)).run();
+            (new DispatchRqdKillFrame(hostname, frameId, killCause.toString(), rqdClient)).run();
         } else {
             try {
                 killQueue.execute(new DispatchRqdKillFrame(hostname,
                         frameId,
                         killCause.toString(),
-                        layer.getKillSignal(),
                         rqdClient));
             } catch (TaskRejectedException e) {
                 logger.warn("Unable to add a DispatchRqdKillFrame request, task rejected, " + e);
