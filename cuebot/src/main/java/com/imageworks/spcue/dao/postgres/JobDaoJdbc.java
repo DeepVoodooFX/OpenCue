@@ -744,6 +744,7 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
                         t.running = rs.getInt("int_running_count");
                         t.succeeded = rs.getInt("int_succeeded_count");
                         t.waiting = rs.getInt("int_waiting_count");
+                        t.terminating = rs.getInt("int_terminating_count");
                         t.total = rs.getInt("int_frame_count");
                         return t;
                     }

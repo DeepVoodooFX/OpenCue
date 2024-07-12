@@ -101,6 +101,7 @@ public class NestedWhiteboardDaoJdbc extends JdbcDaoSupport implements NestedWhi
             "job_stat.int_running_count, " +
             "job_stat.int_dead_count, " +
             "job_stat.int_eaten_count," +
+            "job_stat.int_terminating_count, " +
             "job_stat.int_depend_count, " +
             "job_stat.int_succeeded_count, " +
             "job_usage.int_core_time_success, " +

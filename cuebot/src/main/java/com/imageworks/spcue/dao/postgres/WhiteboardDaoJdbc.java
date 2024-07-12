@@ -1222,6 +1222,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
                 .setDeadFrames(rs.getInt("int_dead_count"))
                 .setSucceededFrames(rs.getInt("int_succeeded_count"))
                 .setEatenFrames(rs.getInt("int_eaten_count"))
+                .setTerminatingFrames(rs.getInt("int_terminating_count"))
                 .setDependFrames(rs.getInt("int_depend_count"))
                 .setPendingFrames(rs.getInt("int_waiting_count") + rs.getInt("int_depend_count"))
                 .setFailedCoreSec(rs.getLong("int_core_time_fail"))
@@ -1287,6 +1288,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
                             .setDeadFrames(rs.getInt("int_dead_count"))
                             .setSucceededFrames(rs.getInt("int_succeeded_count"))
                             .setEatenFrames(rs.getInt("int_eaten_count"))
+                            .setTerminatingFrames(rs.getInt("int_terminating_count"))
                             .setDependFrames(rs.getInt("int_depend_count"))
                             .setPendingFrames(
                                     rs.getInt("int_waiting_count") + rs.getInt("int_depend_count"))
@@ -1919,6 +1921,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
             "job_stat.int_running_count, "+
             "job_stat.int_dead_count, " +
             "job_stat.int_eaten_count," +
+            "job_stat.int_terminating_count, " +
             "job_stat.int_depend_count, "+
             "job_stat.int_succeeded_count, "+
             "job_usage.int_core_time_success, "+
@@ -1965,6 +1968,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
             "layer_stat.int_dead_count," +
             "layer_stat.int_depend_count," +
             "layer_stat.int_eaten_count," +
+            "layer_stat.int_terminating_count," +
             "layer_stat.int_succeeded_count," +
             "layer_usage.int_core_time_success," +
             "layer_usage.int_core_time_fail, "+
@@ -2006,6 +2010,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
                 "layer_stat.int_dead_count, " +
                 "layer_stat.int_depend_count, " +
                 "layer_stat.int_eaten_count, " +
+                "layer_stat.int_terminating_count," +
                 "layer_stat.int_succeeded_count, " +
                 "layer_usage.int_core_time_success, " +
                 "layer_usage.int_core_time_fail, " +

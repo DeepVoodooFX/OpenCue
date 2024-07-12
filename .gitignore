@@ -1,8 +1,10 @@
 *.idea/
 *.pyc
 .DS_Store
+._.DS_Store
 venv*/
 /build/
+/logs/
 /VERSION
 .scannerwork/
 *.egg-info/

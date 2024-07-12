@@ -21,6 +21,8 @@ package com.imageworks.spcue.test.dao.postgres;
 
 import java.io.File;
 import java.util.Map;
+import java.util.List;
+import java.sql.Timestamp;
 import javax.annotation.Resource;
 
 import com.google.common.collect.ImmutableList;
@@ -42,8 +44,10 @@ import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.JobDetail;
 import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.VirtualProc;
+import com.imageworks.spcue.LightweightDependency;
 import com.imageworks.spcue.config.TestAppConfig;
 import com.imageworks.spcue.dao.FrameDao;
+import com.imageworks.spcue.dao.DependDao;
 import com.imageworks.spcue.dao.HostDao;
 import com.imageworks.spcue.dao.ProcDao;
 import com.imageworks.spcue.dao.criteria.FrameSearchFactory;
@@ -92,6 +96,9 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
 
     @Resource
     HostManager hostManager;
+
+    @Resource
+    DependDao dependDao;
 
     @Resource
     DependManager dependManager;
@@ -262,6 +269,70 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
                 "SELECT str_state FROM frame WHERE pk_frame=?",
                 String.class,
                 f.getFrameId()));
+    }
+
+    @Test
+    @Transactional
+    @Rollback(true)
+    public void testFrameTermination() {
+        DispatchHost host = createHost();
+        JobDetail job = launchJob();
+        FrameDetail frame = frameDao.findFrameDetail(job, "0001-pass_1");
+    
+        // Update frame state to TERMINATING
+        assertTrue(frameDao.updateFrameState(frame, FrameState.TERMINATING));
+    
+        // Verify frame state in database
+        assertEquals(FrameState.TERMINATING.toString(), 
+            jdbcTemplate.queryForObject(
+                "SELECT str_state FROM frame WHERE pk_frame=?", 
+                String.class, 
+                frame.getId()));
+    
+        // Handle dependencies to allow transition to dead
+        handleDependencies(frame);
+
+        // Verify terminating count
+        int terminatingCount = jdbcTemplate.queryForObject(
+            "SELECT int_terminating_count FROM job_stat WHERE pk_job=?",
+            Integer.class,
+            job.getId());
+        assertEquals(2, terminatingCount);
+
+
+        assertTrue(frameDao.killTerminatingFrame(frame));
+
+        // Verify frame state is DEAD
+        assertEquals(FrameState.DEAD.toString(), 
+            jdbcTemplate.queryForObject(
+                "SELECT str_state FROM frame WHERE pk_frame=?", 
+                String.class, 
+                frame.getId()));
+
+        // Verify dead count
+        int deadCount = jdbcTemplate.queryForObject(
+            "SELECT int_dead_count FROM job_stat WHERE pk_job=?",
+            Integer.class,
+            job.getId());
+        assertEquals(1, deadCount);
+    
+        // Verify terminating count is updated
+        terminatingCount = jdbcTemplate.queryForObject(
+            "SELECT int_terminating_count FROM job_stat WHERE pk_job=?",
+            Integer.class,
+            job.getId());
+        assertEquals(0, terminatingCount);
+    }
+
+    // Helper method to handle dependencies
+    private void handleDependencies(FrameDetail frame) {
+        // Get all active dependencies for this frame
+        List<LightweightDependency> dependencies = dependDao.getWhatDependsOn(frame, true);
+        
+        for (LightweightDependency depend : dependencies) {
+            // Set each dependency to inactive
+            dependDao.satisfyDepend(depend);
+        }
     }
 
     @Test

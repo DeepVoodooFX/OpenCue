@@ -206,13 +206,34 @@ public class DispatchSupportService implements DispatchSupport {
 
     @Transactional(propagation = Propagation.NEVER)
     public void runFrame(VirtualProc proc, DispatchFrame frame) {
+        logger.debug("Entering runFrame method with proc: {} and frame: {}", proc, frame);
         try {
-            rqdClient.launchFrame(prepareRqdRunFrame(proc, frame), proc);
+            logger.debug("Preparing to call prepareRqdRunFrame");
+            RunFrame runFrame = prepareRqdRunFrame(proc, frame);
+            logger.debug("RunFrame prepared: {}", runFrame);
+            
+            logger.debug("Checking if rqdClient is null");
+            if (rqdClient == null) {
+                throw new IllegalStateException("rqdClient is null");
+            }
+            
+            logger.debug("Preparing to call rqdClient.launchFrame");
+            rqdClient.launchFrame(runFrame, proc);
+            logger.info("Frame {} successfully launched on proc {}", frame, proc);
             dispatchedProcs.getAndIncrement();
         }
-        catch (Exception e) {
+        catch (NullPointerException npe) {
+            logger.error("NullPointerException in runFrame method. proc: {}, frame: {}", proc, frame, npe);
+            // Log all fields of proc and frame
+            logger.error("Proc details: {}", proc.toString());
+            logger.error("Frame details: {}", frame.toString());
             throw new DispatcherException(proc.getName() +
-                    " could not be booked on " + frame.getName() + ", " + e);
+                    " could not be booked on " + frame.getName() + " due to NullPointerException", npe);
+        }
+        catch (Exception e) {
+            logger.error("Error in runFrame method. proc: {}, frame: {}", proc, frame, e);
+            throw new DispatcherException(proc.getName() +
+                    " could not be booked on " + frame.getName(), e);
         }
     }
 
@@ -356,6 +377,8 @@ public class DispatchSupportService implements DispatchSupport {
 
     @Transactional(propagation = Propagation.SUPPORTS)
     public RunFrame prepareRqdRunFrame(VirtualProc proc, DispatchFrame frame) {
+        System.out.println("prepareRqdRunFrame called");
+
         int threads =  proc.coresReserved / 100;
         if (threads < 1) {
             threads = 1;
@@ -373,7 +396,6 @@ public class DispatchSupportService implements DispatchSupport {
             endChunkIndex = lastFrameIndex;
         }
 
-
         RunFrame.Builder builder = RunFrame.newBuilder()
                 .setShot(frame.shot)
                 .setShow(frame.show)
@@ -387,7 +409,7 @@ public class DispatchSupportService implements DispatchSupport {
                 .setResourceId(proc.getProcId())
                 .setNumCores(proc.coresReserved)
                 .setNumGpus(proc.gpusReserved)
-                .setKillSignal(layerDao.getLayer(frame.getLayerId()).getKillSignal())
+                .setKillSignal(layerDao.findKillSignal(layerDao.getLayer(frame.getLayerId())))
                 .setStartTime(System.currentTimeMillis())
                 .setIgnoreNimby(proc.isLocalDispatch)
                 .putAllEnvironment(jobDao.getEnvironment(frame))
@@ -427,6 +449,7 @@ public class DispatchSupportService implements DispatchSupport {
          * Update the Constant.py file when updating tokens here, they will appear in the cuesubmit tooltip popup.
          */
 
+        System.out.println("builder: " + builder);
         frame.uid.ifPresent(builder::setUid);
 
         return builder.build();

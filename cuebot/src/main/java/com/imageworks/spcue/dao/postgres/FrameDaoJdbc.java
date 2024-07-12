@@ -741,6 +741,50 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
         return false;
     }
 
+    private static final String UPDATE_TERMINATE_FRAME =
+        "UPDATE frame SET str_state = ?, ts_stopped = current_timestamp, " +
+        "int_version = int_version + 1 " +
+        "WHERE pk_frame = ? AND str_state = ?";
+
+    @Override
+    public boolean killTerminatingFrame(FrameInterface frame) {
+        logger.info("Forcing termination of frame: " + frame.getFrameId());
+    
+        boolean updated = getJdbcTemplate().update(
+            UPDATE_TERMINATE_FRAME,
+            FrameState.DEAD.toString(),
+            frame.getFrameId(),
+            FrameState.TERMINATING.toString()
+        ) == 1;
+    
+        if (updated) {
+            decrementTerminatingCount(frame);
+        }
+    
+        return updated;
+    }
+
+    private static final String DECREMENT_TERMINATING_COUNT =
+        "UPDATE job_stat " +
+        "SET int_terminating_count = GREATEST(int_terminating_count - 1, 0) " +
+        "WHERE pk_job = (SELECT pk_job FROM frame WHERE pk_frame = ?) " +
+        "AND int_terminating_count > 0";
+
+    @Override
+    public boolean decrementTerminatingCount(FrameInterface frame) {
+        return getJdbcTemplate().update(DECREMENT_TERMINATING_COUNT, frame.getFrameId()) == 1;
+    }
+
+    private static final String UPDATE_TERMINATING_COUNT =
+        "UPDATE job_stat " +
+        "SET int_terminating_count = int_terminating_count + 1 " +
+        "WHERE pk_job = (SELECT pk_job FROM frame WHERE pk_frame = ?)";
+
+    @Override
+    public void incrementTerminatingCount(FrameInterface frame) {
+        getJdbcTemplate().update(UPDATE_TERMINATING_COUNT, frame.getFrameId());
+    }
+
     private static final String MARK_AS_WAITING =
         "UPDATE " +
             "frame "+

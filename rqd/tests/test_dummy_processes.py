@@ -91,6 +91,7 @@ def monitor_job(job, wait_time):
             job = opencue.api.getJob(job.id())
             state = job.state()
             logger.info(f"Job State: {state}")
+            monitor_frame_states(job)
             
             if state == opencue.api.job_pb2.FINISHED:
                 logger.info("Job completed successfully")

@@ -28,6 +28,7 @@ public class FrameStateTotals {
     public int succeeded = 0;
     public int total = 0;
     public int checkpoint = 0;
+    public int terminating = 0;
 
     public int getWaiting() {
         return waiting;
@@ -91,6 +92,14 @@ public class FrameStateTotals {
 
     public void setCheckpoint(int checkpoint) {
         this.checkpoint = checkpoint;
+    }
+
+    public int getTerminating() {
+        return terminating;
+    }
+
+    public void setTerminating(int terminating) {
+        this.terminating = terminating;
     }
 }
 

@@ -221,8 +221,14 @@ public final class RqdClientGrpc implements RqdClient {
     }
 
     public void launchFrame(final RunFrame frame, final VirtualProc proc) {
+        System.out.println("launchFrame");
+        System.out.println("frame: " + frame);
+        System.out.println("proc: " + proc);
         RqdStaticLaunchFrameRequest request =
                 RqdStaticLaunchFrameRequest.newBuilder().setRunFrame(frame).build();
+
+        
+        System.out.println("request: " + request);
 
         if (testMode) {
             return;
@@ -230,6 +236,7 @@ public final class RqdClientGrpc implements RqdClient {
 
         try {
             getStub(proc.hostName).launchFrame(request);
+            System.out.println("frame launched");
         } catch (StatusRuntimeException | ExecutionException e) {
             throw new RqdClientException("failed to launch frame", e);
         }

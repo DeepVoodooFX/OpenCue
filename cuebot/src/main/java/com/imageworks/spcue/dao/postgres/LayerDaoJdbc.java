@@ -326,9 +326,8 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
      @Override
      public void insertLayerDetail(LayerDetail l) {
         l.id =  SqlUtil.genKeyRandom();
-        if(l.killSignal == null) { l.killSignal = "SIGKILL"; }
 
-        System.out.println("Kill Signal: " + l.killSignal);
+        System.out.println("LayerDetail DB: Kill Signal: " + l.killSignal);
         try {
             getJdbcTemplate().update(INSERT_LAYER,
             l.id, l.jobId, l.name, l.command,
@@ -503,6 +502,7 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
                         t.running = rs.getInt("int_running_count");
                         t.succeeded = rs.getInt("int_succeeded_count");
                         t.waiting = rs.getInt("int_waiting_count");
+                        t.terminating = rs.getInt("int_terminating_count");
                         t.total = rs.getInt("int_total_count");
                         return t;
                     }
