@@ -144,7 +144,6 @@ class RqdHost(object):
         request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
             run_frame=runFrame,
             message=message,
-            kill_signal=runFrame.kill_signal
         )
         self.frameStub.Kill(request)
 

@@ -354,11 +354,21 @@ public class JobManagerService implements JobManager {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public boolean shutdownJob(JobInterface job) {
-        // See JobManagerSupport
+        logger.info("Initiating shutdown for job: " + job.getName());
+        
+        // Wait for all frames to finish terminating
+        boolean allFramesTerminated = jobDao.hasTerminatingFrames(job);
+        
+        if (!allFramesTerminated) {
+            logger.warn("Not all frames terminated for job: " + job.getName());
+            return false;
+        }
+        
+        // Update job to finished state
         if (jobDao.updateJobFinished(job)) {
-            logger.info("shutting down job: " + job.getName());
+            logger.info("Job updated to finished state: " + job.getName());
             jobDao.activatePostJob(job);
-            logger.info("activating post jobs");
+            logger.info("Activating post jobs for: " + job.getName());
             return true;
         }
         return false;

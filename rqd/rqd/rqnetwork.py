@@ -161,6 +161,7 @@ class RunningFrame(object):
                 rqd.rqutil.permissionsHigh()
                 try:
                     if platform.system() == "Windows":
+                        # TODO: UPDATE THIS TO USE THE NEW KILL SIGNAL
                         subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
                     else:
                         log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)

@@ -198,7 +198,6 @@ class CueRqdTests(unittest.TestCase):
         request = rqd.compiled_proto.rqd_pb2.RunningFrameKillRequest(
             run_frame=runFrame,
             message=excepted_message,
-            kill_signal="SIGTERM"
         )
         frameStubMock.return_value.Kill.assert_called_with(request)
 

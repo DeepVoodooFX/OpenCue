@@ -248,6 +248,14 @@ public interface JobDao {
     boolean hasPendingFrames(JobInterface job);
 
     /**
+     * returns true if a job has terminating frames.
+     *
+     * @param job
+     * @return
+     */
+    boolean hasTerminatingFrames(JobInterface job);
+
+    /**
      * returns true if job is over max procs
      *
      * @param job

@@ -65,14 +65,15 @@ def monitor_frame_states(job):
         
 def get_frame_state_name(state_code):
     state_names = {
-        0: "WAITING",
-        1: "SETUP",
-        2: "RUNNING",
-        3: "SUCCEEDED",
-        4: "DEPEND",
-        5: "DEAD",
-        6: "EATEN",
-        7: "CHECKPOINT"
+        0: opencue.api.job_pb2.WAITING,
+        1: opencue.api.job_pb2.SETUP,
+        2: opencue.api.job_pb2.RUNNING,
+        3: opencue.api.job_pb2.SUCCEEDED,
+        4: opencue.api.job_pb2.DEPEND,
+        5: opencue.api.job_pb2.DEAD,
+        6: opencue.api.job_pb2.EATEN,
+        7: opencue.api.job_pb2.CHECKPOINT,
+        8: opencue.api.job_pb2.TERMINATING
     }
     return state_names.get(state_code, f"UNKNOWN({state_code})")
 
@@ -108,11 +109,25 @@ def monitor_job(job, wait_time):
                     logger.info(f"Kill request sent to job {job.name()}")
                     
                     # Wait for the job to be killed
-                    for _ in range(24):
-                        time.sleep(5)
+                    for _ in range(1024):
+                        time.sleep(1)
                         job = opencue.api.getJob(job.id())
                         state = job.state()
+                        frames = job.getFrames()
+                        running_frames = False
+                        for frame in frames:
+                            state_code = frame.state()
+                            state_name = get_frame_state_name(state_code)
+                            logger.info(f"Frame state after kill request: {state_name}")
+                            if state_name in [opencue.api.job_pb2.RUNNING, opencue.api.job_pb2.WAITING]:
+                                running_frames = True
+                                break  # Exit the inner loop
+                        
+                        if running_frames:
+                            continue  # Go to the next iteration of the outer loop
+
                         logger.info(f"Job State after kill request: {state}")
+
                         if state == opencue.api.job_pb2.FINISHED:
                             logger.info("Job completed successfully after kill request")
                             return job
@@ -138,11 +153,11 @@ def monitor_job(job, wait_time):
 
 def get_job_state_name(state_code):
     state_names = {
-        0: "PENDING",
-        1: "FINISHED",
-        2: "STARTUP",
-        3: "SHUTDOWN",
-        4: "POSTED",
+        0: opencue.api.job_pb2.PENDING,
+        1: opencue.api.job_pb2.FINISHED,
+        2: opencue.api.job_pb2.STARTUP,
+        3: opencue.api.job_pb2.SHUTDOWN,
+        4: opencue.api.job_pb2.POSTED,
     }
     return state_names.get(state_code, f"UNKNOWN({state_code})")
 

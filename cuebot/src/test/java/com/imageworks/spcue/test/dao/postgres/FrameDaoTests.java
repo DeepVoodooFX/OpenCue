@@ -328,11 +328,13 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
     private void handleDependencies(FrameDetail frame) {
         // Get all active dependencies for this frame
         List<LightweightDependency> dependencies = dependDao.getWhatDependsOn(frame, true);
-        
+
         for (LightweightDependency depend : dependencies) {
             // Set each dependency to inactive
-            dependDao.satisfyDepend(depend);
+            dependDao.setInactive(depend);
         }
+
+        dependDao.decrementDependCount(frame);
     }
 
     @Test

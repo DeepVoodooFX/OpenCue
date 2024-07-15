@@ -607,6 +607,33 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
         }
     }
 
+    private static final String HAS_TERMINATING_FRAMES =
+        "SELECT " +
+            "int_terminating_count " +
+        "FROM " +
+            "job,"+
+            "job_stat " +
+        "WHERE " +
+            "job.pk_job = job_stat.pk_job " +
+        "AND " +
+            "job.str_state = 'PENDING' " +
+        "AND " +
+            "job.b_paused = false " +
+        "AND " +
+            "job.b_auto_book = true " +
+        "AND " +
+            "job.pk_job = ?";
+
+    @Override
+    public boolean hasTerminatingFrames(JobInterface job) {
+        try {
+            return getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
+                    Integer.class, job.getJobId()) > 0;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
+
     private static final String IS_JOB_OVER_MIN_CORES =
         "SELECT " +
             "COUNT(1) " +

@@ -15,6 +15,7 @@ def sigterm_handler(signum, frame):
     logger.info(f"Process ID: {os.getpid()}")
     logger.info(f"Parent Process ID: {os.getppid()}")
     logger.info("Preparing to exit.")
+    # Set frame state to terminating
     global should_exit
     should_exit = True
 
