@@ -131,6 +131,7 @@ public class JobManagerSupport {
 
                     if (manualStopFrame(frame, FrameState.WAITING)) {
                         System.out.println("17 JobManagerSupport: shutdownJob: stopping frame: " + frame.getName() + "/" + frame.getId());
+                        // set framestate to terminating 
                         try {
                             if (proc != null) {
                                 kill(proc, source);

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 should_exit = False
 
 def sigterm_handler(signum, frame):
-    logger.info(f"Received SIGTERM. Signal number: {signum}")
+    logger.info(f"Received SIGTERM. Signum: {signum}, Frame: {frame}")
     logger.info(f"Current time: {time.time()}")
     logger.info(f"Process ID: {os.getpid()}")
     logger.info(f"Parent Process ID: {os.getppid()}")
@@ -20,14 +20,21 @@ def sigterm_handler(signum, frame):
     should_exit = True
 
 def run_dummy_process(scenario, wait_time):
+    logger.info("Starting run_dummy_process")
     global should_exit
     should_exit = False
+    logger.info("Setting up SIGTERM handler")
     signal.signal(signal.SIGTERM, sigterm_handler)
+    logger.info("SIGTERM handler set up complete")
     
     logger.info(f"Running dummy process with scenario: {scenario}")
     logger.info(f"Process ID: {os.getpid()}")
     logger.info(f"Parent Process ID: {os.getppid()}")
     start_time = time.time()
+
+    end_time = time.time() + wait_time
+    while time.time() < end_time and not should_exit:
+        signal.pause()
     
     while True:
         current_time = time.time()
