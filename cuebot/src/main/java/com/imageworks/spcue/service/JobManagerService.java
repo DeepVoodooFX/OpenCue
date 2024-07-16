@@ -355,15 +355,32 @@ public class JobManagerService implements JobManager {
     @Transactional(propagation = Propagation.REQUIRED)
     public boolean shutdownJob(JobInterface job) {
         logger.info("Initiating shutdown for job: " + job.getName());
-        
+    
         // Wait for all frames to finish terminating
-        boolean allFramesTerminated = jobDao.hasTerminatingFrames(job);
-        
+        boolean allFramesTerminated = false;
+        int maxAttempts = 60; // Maximum number of attempts
+        int attempts = 0;
+    
+        while (!allFramesTerminated && attempts < maxAttempts) {
+            allFramesTerminated = !jobDao.hasTerminatingFrames(job);
+            if (!allFramesTerminated) {
+                logger.info("Waiting for frames to terminate for job: " + job.getName() + ". Attempt: " + (attempts + 1));
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    logger.error("Interrupted while waiting for frames to terminate", e);
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+            attempts++;
+        }
+    
         if (!allFramesTerminated) {
-            logger.warn("Not all frames terminated for job: " + job.getName());
+            logger.warn("Not all frames terminated for job: " + job.getName() + " after " + maxAttempts + " attempts.");
             return false;
         }
-        
+    
         // Update job to finished state
         if (jobDao.updateJobFinished(job)) {
             logger.info("Job updated to finished state: " + job.getName());
