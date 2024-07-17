@@ -348,15 +348,25 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.REQUIRED)
     public boolean stopFrame(FrameInterface frame, FrameState state,
                              int exitStatus, long maxRss) {
+                                System.out.println("stopFrame called");
         logger.trace("stopping frame: " + frame);
-        if (frameDao.updateFrameStopped(frame, state,
-                exitStatus, maxRss)) {
-            // Update max rss up the chain.
-            layerDao.updateLayerMaxRSS(frame, maxRss, false);
-            jobDao.updateMaxRSS(frame, maxRss);
+        try {
 
-            procDao.clearVirtualProcAssignment(frame);
-            return true;
+            if (frameDao.updateFrameStopped(frame, state,
+                    exitStatus, maxRss)) {
+                        System.out.println("frame stopped");
+                // Update max rss up the chain.
+                layerDao.updateLayerMaxRSS(frame, maxRss, false);
+                System.out.println("layer max rss updated");
+                jobDao.updateMaxRSS(frame, maxRss);
+                System.out.println("job max rss updated");
+                procDao.clearVirtualProcAssignment(frame);
+                System.out.println("proc cleared");
+
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return false;

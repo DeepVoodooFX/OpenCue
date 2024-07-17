@@ -383,15 +383,20 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
     @Transactional
     @Rollback(true)
     public void testUpdateFrameStopped() {
+        System.out.println("--- Starting testUpdateFrameStopped ---");
 
         DispatchHost host = createHost();
+        System.out.println("Host created: " + host.name);
+
         JobDetail job = launchJob();
+        System.out.println("Job launched: " + job.id);
 
         FrameDetail frame = frameDao.findFrameDetail(job, "0001-pass_1_preprocess");
         DispatchFrame fd = frameDao.getDispatchFrame(frame.getId());
+        System.out.println("Frame found: " + frame.getName() + ", Initial state: " + frame.state);
 
-        assertEquals("0001-pass_1_preprocess",frame.getName());
-        assertEquals(FrameState.WAITING,frame.state);
+        assertEquals("0001-pass_1_preprocess", frame.getName());
+        assertEquals(FrameState.WAITING, frame.state);
 
         VirtualProc proc = new VirtualProc();
         proc.allocationId = host.allocationId;
@@ -404,23 +409,36 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
         proc.showId = frame.showId;
 
         procDao.insertVirtualProc(proc);
+        System.out.println("Virtual proc inserted: " + proc.getId());
+
         procDao.verifyRunningProc(proc.getId(), frame.getId());
+        System.out.println("Running proc verified");
 
         frameDao.updateFrameStarted(proc, fd);
+        System.out.println("Frame started update called");
 
         try {
             Thread.sleep(1001);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         DispatchFrame fd2 = frameDao.getDispatchFrame(frame.getId());
-        assertTrue(frameDao.updateFrameStopped(fd2, FrameState.DEAD, 1, 1000l));
+        System.out.println("Frame state before stop: " + fd2.state);
 
-        assertEquals(FrameState.DEAD.toString(),jdbcTemplate.queryForObject(
+        boolean updateResult = frameDao.updateFrameStopped(fd2, FrameState.DEAD, 1, 1000L);
+        System.out.println("updateFrameStopped result: " + updateResult);
+
+        assertTrue("Frame update should succeed", updateResult);
+
+        String finalState = jdbcTemplate.queryForObject(
                 "SELECT str_state FROM frame WHERE pk_frame=?",
-                String.class, frame.getFrameId()));
+                String.class, frame.getId());
+        System.out.println("Final frame state in DB: " + finalState);
+
+        assertEquals(FrameState.DEAD.toString(), finalState);
+
+        System.out.println("--- Ending testUpdateFrameStopped ---");
     }
 
     @Test

@@ -49,9 +49,7 @@ def run_dummy_process(scenario, wait_time):
                 logger.info("Hanging indefinitely")
                 hang_start = time.time()
                 while True:
-                    if should_exit:
-                        logger.info(f"Exiting hang scenario after {time.time() - hang_start} seconds")
-                        sys.exit(0)
+                    logger.info(f"Hanging since {hang_start}")
                     time.sleep(1)
         time.sleep(0.1)
 

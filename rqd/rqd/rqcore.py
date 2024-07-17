@@ -183,7 +183,8 @@ class FrameAttendantThread(threading.Thread):
             print("%-21s%s" % ("renderHost",
                                               self.rqCore.machine.getHostname()), file=self.rqlog)
             print("%-21s%s" % ("jobId", self.runFrame.job_id), file=self.rqlog)
-            print("%-21s%s" % ("kill signal", self.runFrame.kill_signal), file=self.rqlog)
+            if self.frameInfo.killSignal:
+                print("%-21s%s" % ("killSignal", self.frameInfo.killSignal), file=self.rqlog)
             print("%-21s%s" % ("frameId", self.runFrame.frame_id), file=self.rqlog)
             for env in sorted(self.frameEnv):
                 print("%-21s%s=%s" % ("env", env, self.frameEnv[env]), file=self.rqlog)
@@ -211,6 +212,8 @@ class FrameAttendantThread(threading.Thread):
             print("%-20s%s" % ("exitSignal", self.frameInfo.exitSignal), file=self.rqlog)
             if self.frameInfo.killMessage:
                 print("%-20s%s" % ("killMessage", self.frameInfo.killMessage), file=self.rqlog)
+            if self.frameInfo.killSignal:
+                print("%-20s%s" % ("killSignal", self.frameInfo.killSignal), file=self.rqlog)
             print("%-20s%s" % ("startTime",
                                          time.ctime(self.startTime)), file=self.rqlog)
             print("%-20s%s" % ("endTime",

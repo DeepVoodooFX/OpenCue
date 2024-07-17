@@ -23,11 +23,11 @@ def create_and_submit_job(scenario, wait_time):
         
         logger.info("Creating dummy layer")
         dummy_command = f"""python3 /ParkCounty/apps/lnx-exo/cuedev/Opencue/rqd/tests/dummy_processes.py --scenario {scenario} --wait-time {wait_time}"""
-        dummy_layer = Shell("dummy_layer", command=dummy_command.split(), kill_signal="SIGTERM", threadable=True)
+        dummy_layer = Shell("dummy_layer", range='1-10', command=dummy_command.split(), kill_signal="SIGTERM", threadable=True)
         ol.add_layer(dummy_layer)
         
         logger.info("Launching job")
-        result = cuerun.launch(ol, range="1-1", use_pycuerun=False)
+        result = cuerun.launch(ol, range="1-5", use_pycuerun=False)
         logger.info(f"cuerun.launch returned: {result}")
 
         if isinstance(result, list):
@@ -110,7 +110,7 @@ def monitor_job(job, wait_time):
                     
                     # Wait for the job to be killed
                     for _ in range(1024):
-                        time.sleep(1)
+                        time.sleep(0.1)
                         job = opencue.api.getJob(job.id())
                         state = job.state()
                         frames = job.getFrames()
@@ -119,7 +119,7 @@ def monitor_job(job, wait_time):
                             state_code = frame.state()
                             state_name = get_frame_state_name(state_code)
                             logger.info(f"Frame state after kill request: {state_name}")
-                            if state_name in [opencue.api.job_pb2.RUNNING, opencue.api.job_pb2.WAITING]:
+                            if state_name in [opencue.api.job_pb2.RUNNING, opencue.api.job_pb2.WAITING, opencue.api.job_pb2.TERMINATING]:
                                 running_frames = True
                                 break  # Exit the inner loop
                         

@@ -198,8 +198,6 @@ public final class RqdClientGrpc implements RqdClient {
 
         try {
             logger.info("killing frame on " + host + ", source: " + message);
-            // FrameInterface frame = frameDao.getFrame(frameId);
-            // jobManager.updateFrameState(frame, FrameState.TERMINATING);
             getStub(host).killRunningFrame(request);
         } catch(StatusRuntimeException | ExecutionException e) {
             throw new RqdClientException("failed to kill frame " + frameId, e);
