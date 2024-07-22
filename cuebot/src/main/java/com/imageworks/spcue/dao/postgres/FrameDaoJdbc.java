@@ -118,7 +118,7 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
     
         // Verify current state in the database
         String currentState = verifyAndLogDatabaseElement("SELECT str_state FROM frame WHERE pk_frame = ?", 
-                                                            String.class, frame.getFrameId(), "Current state");
+                                                             String.class, frame.getFrameId(), "Current state");
     
         // Verify current version in the database
         int currentVersion = verifyAndLogDatabaseElement("SELECT int_version FROM frame WHERE pk_frame = ?", 
@@ -139,6 +139,7 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
         System.out.println(UPDATE_FRAME_STOPPED);
     
         System.out.println("Executing update with current state: " + currentState);
+        System.out.println("State before update: " + state.toString());
         int updatedRows = getJdbcTemplate().update(UPDATE_FRAME_STOPPED,
                 state.toString(),
                 exitStatus,

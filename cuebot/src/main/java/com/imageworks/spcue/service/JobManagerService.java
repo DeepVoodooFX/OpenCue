@@ -356,9 +356,8 @@ public class JobManagerService implements JobManager {
     public boolean shutdownJob(JobInterface job) {
         logger.info("Initiating shutdown for job: " + job.getName());
     
-        // Wait for all frames to finish terminating
         boolean allFramesTerminated = false;
-        int maxAttempts = 60; // Maximum number of attempts
+        int maxAttempts = 60;
         int attempts = 0;
     
         while (!allFramesTerminated && attempts < maxAttempts) {

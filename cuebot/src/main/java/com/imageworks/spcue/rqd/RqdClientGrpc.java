@@ -36,7 +36,6 @@ import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.HostInterface;
 import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.VirtualProc;
-import com.imageworks.spcue.dao.FrameDao;
 import com.imageworks.spcue.grpc.host.LockState;
 import com.imageworks.spcue.grpc.job.FrameState;
 import com.imageworks.spcue.grpc.report.RunningFrameInfo;
@@ -54,7 +53,6 @@ import com.imageworks.spcue.grpc.rqd.RunningFrameGrpc;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusRequest;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusResponse;
 import com.imageworks.spcue.service.JobManagerService;
-import com.imageworks.spcue.service.JobManager;
 
 public final class RqdClientGrpc implements RqdClient {
     private static final Logger logger = LogManager.getLogger(RqdClientGrpc.class);
@@ -64,8 +62,6 @@ public final class RqdClientGrpc implements RqdClient {
     private final int rqdCacheConcurrency;
     private final int rqdServerPort;
     private final int rqdTaskDeadlineSeconds;
-    private FrameDao frameDao;
-    private JobManager jobManager;
     private JobManagerService jobManagerService;
     private LoadingCache<String, ManagedChannel> channelCache;
 

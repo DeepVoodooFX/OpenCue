@@ -34,6 +34,7 @@ import tempfile
 import threading
 import time
 import traceback
+import psutil
 
 import rqd.compiled_proto.host_pb2
 import rqd.compiled_proto.report_pb2
@@ -347,6 +348,9 @@ class FrameAttendantThread(threading.Thread):
 
         if rqd.rqconstants.RQD_PREPEND_TIMESTAMP:
             pipe_to_file(frameInfo.forkedCommand.stdout, frameInfo.forkedCommand.stderr, self.rqlog)
+
+        # Handle termination timeout
+        
         returncode = frameInfo.forkedCommand.wait()
 
         # Find exitStatus and exitSignal

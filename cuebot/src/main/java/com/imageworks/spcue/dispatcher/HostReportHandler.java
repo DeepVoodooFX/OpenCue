@@ -45,7 +45,6 @@ import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.FrameDetail;
 import com.imageworks.spcue.JobEntity;
 import com.imageworks.spcue.LayerEntity;
-import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.LayerDetail;
 import com.imageworks.spcue.LocalHostAssignment;
 import com.imageworks.spcue.Source;

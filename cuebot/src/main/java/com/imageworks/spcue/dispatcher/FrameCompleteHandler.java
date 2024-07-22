@@ -604,14 +604,6 @@ public class FrameCompleteHandler {
                 frame.state)) {
             return frame.state;
         }
-        else if (frame.state.equals(FrameState.TERMINATING)) {
-            // if (isFrameActuallyTerminated(frame)) {
-            //     return FrameState.SUCCEEDED;
-            // } else {
-            //     return FrameState.DEAD;
-            // }
-            return FrameState.SUCCEEDED;
-        }
         // Checks for frames that have reached max retries.
         else if (frame.state.equals(FrameState.DEAD)) {
             if (job.autoEat) {
@@ -649,6 +641,8 @@ public class FrameCompleteHandler {
                 if (!(report.getExitStatus() == Dispatcher.EXIT_STATUS_MEMORY_FAILURE
                         || report.getExitSignal() == Dispatcher.EXIT_STATUS_MEMORY_FAILURE))
                     newState = FrameState.DEAD;
+            } else if (frame.state.equals(FrameState.TERMINATING)) {
+                return FrameState.DEAD;
             }
 
             return newState;
