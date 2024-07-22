@@ -39,7 +39,8 @@ RGB_FRAME_STATE = {opencue.api.job_pb2.SUCCEEDED: QtGui.QColor(55, 200, 55),
                    opencue.api.job_pb2.WAITING: QtGui.QColor(135, 207, 235),
                    opencue.api.job_pb2.DEPEND: QtGui.QColor(160, 32, 240),
                    opencue.api.job_pb2.DEAD: QtGui.QColor(255, 0, 0),
-                   opencue.api.job_pb2.EATEN: QtGui.QColor(150, 0, 0)}
+                   opencue.api.job_pb2.EATEN: QtGui.QColor(150, 0, 0),
+                   opencue.api.job_pb2.TERMINATING: QtGui.QColor(255, 140, 0)}
 
 # This controls display order
 FRAME_STATES = (opencue.api.job_pb2.SUCCEEDED,
@@ -47,7 +48,8 @@ FRAME_STATES = (opencue.api.job_pb2.SUCCEEDED,
                 opencue.api.job_pb2.WAITING,
                 opencue.api.job_pb2.DEPEND,
                 opencue.api.job_pb2.DEAD,
-                opencue.api.job_pb2.EATEN)
+                opencue.api.job_pb2.EATEN,
+                opencue.api.job_pb2.TERMINATING)
 
 NO_PEN = QtGui.QPen(QtCore.Qt.NoPen)
 NO_BRUSH = QtGui.QBrush(QtCore.Qt.NoBrush)
@@ -183,6 +185,7 @@ class JobBookingBarDelegate(AbstractDelegate):
                 try:
                     jobRunning = job.data.job_stats.running_frames
                     jobWaiting = job.data.job_stats.waiting_frames
+                    jobTerminating = job.data.job_stats.terminating_frames
                     # pylint: disable=broad-except
                     try:
                         cores_per_frame = float(job.data.job_stats.reserved_cores / jobRunning)

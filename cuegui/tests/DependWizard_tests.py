@@ -31,16 +31,14 @@ import opencue.wrappers.job
 
 import cuegui.DependWizard
 import cuegui.Style
-
-from . import test_utils
-
+import cuegui
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class DependWizardTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 

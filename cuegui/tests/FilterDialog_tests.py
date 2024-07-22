@@ -33,15 +33,14 @@ import opencue.wrappers.show
 import cuegui.FilterDialog
 import cuegui.Style
 
-from . import test_utils
-
+import cuegui
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class FilterDialogTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, getStubMock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 
@@ -154,7 +153,7 @@ class FilterMonitorTreeTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, getStubMock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 
@@ -199,7 +198,7 @@ class MatcherMonitorTreeTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, getStubMock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 

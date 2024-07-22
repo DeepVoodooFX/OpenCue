@@ -31,7 +31,7 @@ import cuegui.CueJobMonitorTree
 import cuegui.plugins.MonitorCuePlugin
 import cuegui.Style
 
-from . import test_utils
+import cuegui
 
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
@@ -39,7 +39,7 @@ class CueJobMonitorTreeTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, get_stub_mock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 

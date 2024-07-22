@@ -36,9 +36,7 @@ import opencue.wrappers.show
 import cuegui.LayerDialog
 import cuegui.Style
 import cuegui.Utils
-
-from . import test_utils
-
+import cuegui
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class LayerPropertiesDialogTests(unittest.TestCase):
@@ -47,7 +45,7 @@ class LayerPropertiesDialogTests(unittest.TestCase):
     @mock.patch('opencue.api.getLayer')
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, get_stub_mock, get_layer_mock, get_limits_mock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 
@@ -56,14 +54,14 @@ class LayerPropertiesDialogTests(unittest.TestCase):
                 opencue.compiled_proto.job_pb2.Layer(
                     id='layer1Id', name='layer1Name', range='1-5', tags=['tag1', 'tag2'],
                     min_cores=1, max_cores=3, is_threadable=False,
-                    min_memory=2097152, min_gpu_memory=1,
+                    min_memory=2097152, min_gpu_memory=1, kill_signal='SIGTERM',
                     chunk_size=1, timeout=30, timeout_llu=1, memory_optimizer_enabled=True,
                     limits=['limit1Name', 'limit2Name'])),
             'layer2Id': opencue.wrappers.layer.Layer(
                 opencue.compiled_proto.job_pb2.Layer(
                     id='layer2Id', name='layer2Name', range='2-22', tags=['tag2', 'tag3'],
                     min_cores=2, max_cores=2, is_threadable=True,
-                    min_memory=6291456, min_gpu_memory=2,
+                    min_memory=6291456, min_gpu_memory=2, kill_signal='SIGTERM',
                     chunk_size=5, timeout=60, timeout_llu=5, memory_optimizer_enabled=False,
                     limits=['limit2Name', 'limit3Name'])),
         }
@@ -222,6 +220,11 @@ class LayerPropertiesDialogTests(unittest.TestCase):
             True)
         self.layer_properties_dialog._LayerPropertiesDialog__timeout_llu.setValue(new_timeout_llu)
 
+        new_kill_signal = 'SIGTERM'
+        self.layer_properties_dialog._LayerPropertiesDialog__kill_signal.parent().parent().enable(
+            True)
+        self.layer_properties_dialog._LayerPropertiesDialog__kill_signal.setText(new_kill_signal)
+
         new_tags = ['newTag1', 'newTag2']
         self.layer_properties_dialog._LayerPropertiesDialog__tags.parent().enable(True)
         self.layer_properties_dialog._LayerPropertiesDialog__tags._tags_widget.set_tags(new_tags)
@@ -250,6 +253,8 @@ class LayerPropertiesDialogTests(unittest.TestCase):
         layer2_mock.setTimeout.assert_called_with(new_timeout)
         layer1_mock.setTimeoutLLU.assert_called_with(new_timeout_llu)
         layer2_mock.setTimeoutLLU.assert_called_with(new_timeout_llu)
+        layer1_mock.setKillSignal.assert_called_with(new_kill_signal)
+        layer2_mock.setKillSignal.assert_called_with(new_kill_signal)
         layer1_mock.setTags.assert_called_with(new_tags)
         layer2_mock.setTags.assert_called_with(new_tags)
         layer1_mock.addLimit.assert_has_calls(

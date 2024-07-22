@@ -103,7 +103,7 @@ class LayerMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
                        data=lambda layer: layer.data.layer_stats.running_frames,
                        sort=lambda layer: layer.data.layer_stats.running_frames,
                        tip="Total number or running frames in this layer.")
-        self.addColumn("Depend", 53, id=14,
+        self.addColumn("Depend", 60, id=14,
                        data=lambda layer: layer.data.layer_stats.depend_frames,
                        sort=lambda layer: layer.data.layer_stats.depend_frames,
                        tip="Total number of dependent frames in this layer.")
@@ -119,28 +119,35 @@ class LayerMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
                        data=lambda layer: layer.data.layer_stats.dead_frames,
                        sort=lambda layer: layer.data.layer_stats.dead_frames,
                        tip="Total number of dead frames in this layer.")
+        self.addColumn("Terminating", 80, id=18,
+                       data=lambda layer: layer.data.layer_stats.terminating_frames,
+                       sort=lambda layer: layer.data.layer_stats.terminating_frames,
+                       tip="Total number of terminating frames in this layer.")
         self.addColumn(
-            "Avg", 65, id=18,
+            "Avg", 65, id=19,
             data=lambda layer: cuegui.Utils.secondsToHHMMSS(layer.data.layer_stats.avg_frame_sec),
             sort=lambda layer: layer.data.layer_stats.avg_frame_sec,
             tip="Average number of HOURS:MINUTES:SECONDS per frame\nin this layer.")
-        self.addColumn("Tags", 100, id=19,
+        self.addColumn("Tags", 100, id=20,
                        data=lambda layer: " | ".join(layer.data.tags),
                        tip="The tags define what resources may be booked on\n"
                            "frames in this layer.")
-        self.addColumn("Progress", 100, id=20,
+        self.addColumn("Progress", 100, id=21,
                         delegate=cuegui.ItemDelegate.ProgressDelegate,
                         data=lambda layer: layer.percentCompleted(),
                         sort=lambda layer: layer.percentCompleted(),
                         tip="Progress for the Layer")
-        self.addColumn("Timeout", 45, id=21,
+        self.addColumn("Timeout", 45, id=22,
                        data=lambda layer: cuegui.Utils.secondsToHHHMM(layer.data.timeout*60),
                        sort=lambda layer: layer.data.timeout,
                        tip="Timeout for the frames, Hours:Minutes")
-        self.addColumn("Timeout LLU", 45, id=22,
+        self.addColumn("Timeout LLU", 45, id=23,
                        data=lambda layer: cuegui.Utils.secondsToHHHMM(layer.data.timeout_llu*60),
                        sort=lambda layer: layer.data.timeout_llu,
                        tip="Timeout for a frames\' LLU, Hours:Minutes")
+        self.addColumn("Kill Signal", 100, id=24,
+                       data=lambda layer: layer.data.kill_signal,
+                       tip="Signal to send to the frames when killed.")
         cuegui.AbstractTreeWidget.AbstractTreeWidget.__init__(self, parent)
 
         self.itemDoubleClicked.connect(self.__itemDoubleClickedFilterLayer)

@@ -29,17 +29,16 @@ import opencue.compiled_proto.job_pb2
 import opencue.wrappers.comment
 import opencue.wrappers.job
 
+import cuegui
 import cuegui.Comments
 import cuegui.Style
-
-from . import test_utils
 
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class CommentsTests(unittest.TestCase):
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, getStubMock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = QtCore.QSettings()
         cuegui.Style.init()
 

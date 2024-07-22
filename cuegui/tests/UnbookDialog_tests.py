@@ -36,9 +36,7 @@ import opencue.wrappers.subscription
 
 import cuegui.Style
 import cuegui.UnbookDialog
-
-from . import test_utils
-
+import cuegui
 
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class UnbookDialogTests(unittest.TestCase):
@@ -46,7 +44,7 @@ class UnbookDialogTests(unittest.TestCase):
     @mock.patch('opencue.api.findShow')
     @mock.patch('opencue.cuebot.Cuebot.getStub')
     def setUp(self, get_stub_mock, find_show_mock):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 
@@ -202,7 +200,7 @@ class UnbookDialogTests(unittest.TestCase):
 class SelectItemsWithSearchDialogTests(unittest.TestCase):
 
     def setUp(self):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 
@@ -245,7 +243,7 @@ class SelectItemsWithSearchDialogTests(unittest.TestCase):
 class KillConfirmationDialogTests(unittest.TestCase):
 
     def setUp(self):
-        app = test_utils.createApplication()
+        app = cuegui.create_app([])
         app.settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
 

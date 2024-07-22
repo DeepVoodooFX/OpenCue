@@ -120,26 +120,30 @@ class JobMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
                        data=lambda job: job.data.job_stats.waiting_frames,
                        sort=lambda job: job.data.job_stats.waiting_frames,
                        tip="The number of waiting frames in each job,")
-        self.addColumn("MaxRss", 55, id=10,
+        self.addColumn("Terminating", 60, id=10,
+                       data=lambda job: job.data.job_stats.terminating_frames,
+                       sort=lambda job: job.data.job_stats.terminating_frames,
+                       tip="The number of terminating frames in each job.")
+        self.addColumn("MaxRss", 55, id=11,
                        data=lambda job: cuegui.Utils.memoryToString(job.data.job_stats.max_rss),
                        sort=lambda job: job.data.job_stats.max_rss,
                        tip="The maximum memory used any single frame in each job.")
-        self.addColumn("Age", 50, id=11,
+        self.addColumn("Age", 50, id=12,
                        data=lambda job: (cuegui.Utils.secondsToHHHMM((job.data.stop_time or
                                                                time.time()) - job.data.start_time)),
                        sort=lambda job: ((job.data.stop_time or time.time()) - job.data.start_time),
                        tip="The HOURS:MINUTES that the job has spent in the queue.")
-        self.addColumn("Launched", 100, id=12,
+        self.addColumn("Launched", 100, id=13,
                        data=lambda job: cuegui.Utils.dateToMMDDHHMM(job.data.start_time),
                        sort=lambda job: job.data.start_time,
                        tip="The time when the job was launched.")
-        self.addColumn("Finished", 100, id=13,
+        self.addColumn("Finished", 100, id=14,
                        data=lambda job: (job.data.stop_time > 0
                                          and cuegui.Utils.dateToMMDDHHMM(job.data.stop_time)
                                          or ""),
                        sort=lambda job: job.data.stop_time,
                        tip="The time when the job ended.")
-        self.addColumn("Progress", 0, id=14,
+        self.addColumn("Progress", 0, id=15,
                        delegate=cuegui.ItemDelegate.JobProgressBarDelegate,
                        tip="A visual overview of the progress of each job.\n"
                            "Green \t is succeeded\n"

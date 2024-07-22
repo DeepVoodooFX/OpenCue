@@ -302,7 +302,7 @@ class FrameMonitor(QtWidgets.QWidget):
         btn.setMenu(menu)
         menu.triggered.connect(self._selectStatusHandle)  # pylint: disable=no-member
 
-        for item in ["Clear", None, "Succeeded", "Running", "Waiting", "Depend", "Dead", "Eaten"]:
+        for item in ["Clear", None, "Succeeded", "Running", "Waiting", "Depend", "Dead", "Eaten", "Terminating"]:
             if item:
                 menu.addAction(item)
             else:
@@ -435,7 +435,8 @@ class FrameMonitor(QtWidgets.QWidget):
                      ("Waiting", QtCore.Qt.ALT + QtCore.Qt.Key_3),
                      ("Depend", QtCore.Qt.ALT + QtCore.Qt.Key_4),
                      ("Dead", QtCore.Qt.ALT + QtCore.Qt.Key_5),
-                     ("Eaten", QtCore.Qt.ALT + QtCore.Qt.Key_6)]:
+                     ("Eaten", QtCore.Qt.ALT + QtCore.Qt.Key_6),
+                     ("Terminating", QtCore.Qt.ALT + QtCore.Qt.Key_7)]:
             if item:
                 a = QtWidgets.QAction(item[0], menu)
                 if item[0] != "Clear":

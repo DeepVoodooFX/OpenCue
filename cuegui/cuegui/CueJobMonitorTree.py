@@ -790,6 +790,7 @@ class JobWidgetItem(cuegui.AbstractWidgetItem.AbstractWidgetItem):
                 self._cache["FST"] = {
                     opencue.compiled_proto.job_pb2.WAITING: jobStats.waiting_frames,
                     opencue.compiled_proto.job_pb2.RUNNING: jobStats.running_frames,
+                    opencue.compiled_proto.job_pb2.TERMINATING: jobStats.terminating_frames,
                     opencue.compiled_proto.job_pb2.SUCCEEDED: jobStats.succeeded_frames,
                     opencue.compiled_proto.job_pb2.CHECKPOINT: 0,
                     opencue.compiled_proto.job_pb2.SETUP: 0,

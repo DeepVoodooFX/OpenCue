@@ -251,6 +251,7 @@ class LayerAttributes(AbstractAttributes):
                 "range": layer.data.range,
                 "tags": layer.data.tags,
                 "threadable": str(layer.data.is_threadable),
+                "killSignal": str(layer.data.kill_signal),
                 "minCores": "%0.2f" % layer.data.min_cores,
                 "minMemory": "%0.2fMB" % (layer.data.min_memory / 1024.0),
                 "outputs": {},
@@ -261,6 +262,7 @@ class LayerAttributes(AbstractAttributes):
                        "eaten": layer.data.layer_stats.eaten_frames,
                        "depend": layer.data.layer_stats.depend_frames,
                        "succeeded": layer.data.layer_stats.succeeded_frames,
+                       "terminating": layer.data.layer_stats.terminating_frames,
                        "running": layer.data.layer_stats.running_frames
                 },
                 "stats": {
@@ -281,7 +283,7 @@ class LayerAttributes(AbstractAttributes):
                           "maxRss": int(layer.data.layer_stats.max_rss)
                 },
                 "__childOrder":["id","layer","services","type","range","tags",
-                                "threadable","minCores","minMemory","outputs",
+                                "threadable","killSignal","minCores","minMemory","outputs",
                                 "depends", "frames","resources"],
                 "depends": getDependsForm(preload["depends"]),
                 }
@@ -344,6 +346,7 @@ class JobAttributes(AbstractAttributes):
                        "eaten": job.data.job_stats.eaten_frames,
                        "depend": job.data.job_stats.depend_frames,
                        "succeeded": job.data.job_stats.succeeded_frames,
+                       "terminating": job.data.job_stats.terminating_frames,
                        "running": job.data.job_stats.running_frames
                        },
             "stats": {

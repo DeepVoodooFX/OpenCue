@@ -58,6 +58,7 @@ style.colors.frame_state:
   SUCCEEDED: [55, 200, 55]
   WAITING: [135, 207, 235]
   CHECKPOINT: [61, 98, 247]
+  TERMINATING: [255, 140, 0]
 
 # Default editor to use for viewing log files.
 editor.windows: 'notepad'

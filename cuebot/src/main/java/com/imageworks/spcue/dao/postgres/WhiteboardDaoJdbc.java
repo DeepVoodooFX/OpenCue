@@ -1276,7 +1276,8 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
                             .addAllLimits(Arrays.asList(SqlUtil.getString(rs,"str_limit_names").split(",")))
                             .setMemoryOptimizerEnabled(rs.getBoolean("b_optimize"))
                             .setTimeout(rs.getInt("int_timeout"))
-                            .setTimeoutLlu(rs.getInt("int_timeout_llu"));
+                            .setTimeoutLlu(rs.getInt("int_timeout_llu"))
+                            .setKillSignal(SqlUtil.getString(rs, "str_kill_signal"));
 
                     LayerStats.Builder statsBuilder = LayerStats.newBuilder()
                             .setReservedCores(Convert.coreUnitsToCores(rs.getInt("int_cores")))

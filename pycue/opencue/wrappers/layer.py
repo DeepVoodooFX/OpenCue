@@ -201,6 +201,14 @@ class Layer(object):
         return self.stub.SetTimeoutLLU(job_pb2.LayerSetTimeoutLLURequest(
             layer=self.data, timeout_llu=timeout_llu),
             timeout=Cuebot.Timeout)
+    
+    def setKillSignal(self, kill_signal):
+        """Set the kill signal for the layer.
+        :type kill_signal: str
+        :param kill_signal: kill signal"""
+        return self.stub.SetKillSignal(job_pb2.LayerSetKillSignalRequest(
+            layer=self.data, kill_signal=kill_signal),
+            timeout=Cuebot.Timeout)
 
     def addRenderPartition(self, hostname, threads, max_cores, num_mem, max_gpu):
         """Adds a render partition to the layer.
@@ -444,6 +452,13 @@ class Layer(object):
         :return: minimum kB of memory required by frames in this layer
         """
         return self.data.min_memory
+    
+    def killSignal(self):
+        """Returns the kill signal for the layer.
+        
+        :rtype:  str
+        :return: kill signal"""
+        return self.data.kill_signal
 
     def limits(self):
         """Returns the limit names for this layer.
@@ -535,6 +550,14 @@ class Layer(object):
         :return: total number of pending (dependent and waiting) frames
         """
         return self.data.layer_stats.pending_frames
+    
+    def terminatingFrames(self):
+        """Returns the total number of terminating frames in the layer.
+
+        :rtype:  int
+        :return: total number of terminating frames
+        """
+        return self.data.layer_stats.terminating_frames
 
     def percentCompleted(self):
         """Returns the percent that the layer's frames are completed.

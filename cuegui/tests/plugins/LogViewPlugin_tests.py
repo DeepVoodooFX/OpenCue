@@ -30,7 +30,7 @@ import qtpy.QtWidgets
 import cuegui.Main
 import cuegui.plugins.LogViewPlugin
 import cuegui.Style
-from .. import test_utils
+import cuegui
 
 
 _LOG_TEXT_1 = '''Lorem ipsum dolor sit amet, consectetur adipiscing elit.
@@ -63,7 +63,7 @@ class LogViewPluginTests(pyfakefs.fake_filesystem_unittest.TestCase):
         self.log1 = self.fs.create_file(self.logPath1, contents=_LOG_TEXT_1)
         self.fs.create_file(self.logPath2, contents=_LOG_TEXT_2)
 
-        test_utils.createApplication()
+        cuegui.create_app([])
         cuegui.app().settings = qtpy.QtCore.QSettings()
         cuegui.Style.init()
         self.parentWidget = qtpy.QtWidgets.QMainWindow()

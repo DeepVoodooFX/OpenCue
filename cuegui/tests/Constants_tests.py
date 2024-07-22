@@ -146,6 +146,7 @@ class ConstantsTests(pyfakefs.fake_filesystem_unittest.TestCase):
             opencue.api.job_pb2.SUCCEEDED: QtGui.QColor(55, 200, 55),
             opencue.api.job_pb2.WAITING: QtGui.QColor(135, 207, 235),
             opencue.api.job_pb2.CHECKPOINT: QtGui.QColor(61, 98, 247),
+            opencue.api.job_pb2.TERMINATING: QtGui.QColor(255, 140, 0),
         }, result.RGB_FRAME_STATE)
         self.assertEqual(5242880, result.MEMORY_WARNING_LEVEL)
         self.assertEqual(

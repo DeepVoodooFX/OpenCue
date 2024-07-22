@@ -173,6 +173,7 @@ RGB_FRAME_STATE = {
     opencue.api.job_pb2.SUCCEEDED: QtGui.QColor(*__frame_colors.get('SUCCEEDED')),
     opencue.api.job_pb2.WAITING: QtGui.QColor(*__frame_colors.get('WAITING')),
     opencue.api.job_pb2.CHECKPOINT: QtGui.QColor(*__frame_colors.get('CHECKPOINT')),
+    opencue.api.job_pb2.TERMINATING: QtGui.QColor(*__frame_colors.get('TERMINATING')),
 }
 
 MEMORY_WARNING_LEVEL = __config.get('memory_warning_level')

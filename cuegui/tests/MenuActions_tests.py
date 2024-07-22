@@ -52,7 +52,7 @@ import cuegui.Constants
 import cuegui.CueJobMonitorTree
 import cuegui.Main
 import cuegui.MenuActions
-from . import test_utils
+import cuegui
 
 _GB_TO_KB = 1024 * 1024
 
@@ -60,7 +60,7 @@ _GB_TO_KB = 1024 * 1024
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class JobActionsTests(unittest.TestCase):
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.job_actions = cuegui.MenuActions.JobActions(self.widgetMock, mock.Mock(), None, None)
 
@@ -546,7 +546,7 @@ class LayerActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.job = mock.create_autospec(opencue.wrappers.job.Job())
         self.layer_actions = cuegui.MenuActions.LayerActions(
@@ -795,7 +795,7 @@ class FrameActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.job = mock.create_autospec(opencue.wrappers.job.Job())
         self.frame_actions = cuegui.MenuActions.FrameActions(
@@ -1053,7 +1053,7 @@ class ShowActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.show_actions = cuegui.MenuActions.ShowActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1090,7 +1090,7 @@ class GroupActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.group_actions = cuegui.MenuActions.GroupActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1128,7 +1128,7 @@ class SubscriptionActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.subscription_actions = cuegui.MenuActions.SubscriptionActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1182,7 +1182,7 @@ class HostActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.host_actions = cuegui.MenuActions.HostActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1345,7 +1345,7 @@ class ProcActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.proc_actions = cuegui.MenuActions.ProcActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1395,7 +1395,7 @@ class DependenciesActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.dep_actions = cuegui.MenuActions.DependenciesActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1422,7 +1422,7 @@ class FilterActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.filter_actions = cuegui.MenuActions.FilterActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1496,7 +1496,7 @@ class MatcherActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.matcher_actions = cuegui.MenuActions.MatcherActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1527,7 +1527,7 @@ class ActionActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.action_actions = cuegui.MenuActions.ActionActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1547,7 +1547,7 @@ class TaskActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.task_actions = cuegui.MenuActions.TaskActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1586,7 +1586,7 @@ class LimitActionsTests(unittest.TestCase):
 
     @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.limit_actions = cuegui.MenuActions.LimitActions(
             self.widgetMock, mock.Mock(), None, None)
@@ -1637,7 +1637,7 @@ class LimitActionsTests(unittest.TestCase):
 @mock.patch('opencue.cuebot.Cuebot.getStub', new=mock.Mock())
 class MenuActionsTests(unittest.TestCase):
     def setUp(self):
-        self.app = test_utils.createApplication()
+        self.app = cuegui.create_app([])
         self.widgetMock = mock.Mock()
         self.args = [self.widgetMock, lambda: None, lambda: None, lambda: None]
         self.menuActions = cuegui.MenuActions.MenuActions(*self.args)

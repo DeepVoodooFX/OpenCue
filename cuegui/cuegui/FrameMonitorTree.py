@@ -94,6 +94,7 @@ class FrameMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
                            "Running: \t The frame is currently running.\n"
                            "Waiting: \t The frame is ready to be run when resources\n"
                            "\t are available.\n"
+                           "Terminating: \t The frame is being killed.\n"
                            "Depend: \t The frame depends on another frame or job.\n"
                            "Dead: \t The frame failed with an error.")
         self.addColumn("Cores", 55, id=5,
