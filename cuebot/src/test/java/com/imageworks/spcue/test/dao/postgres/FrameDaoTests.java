@@ -63,6 +63,7 @@ import com.imageworks.spcue.service.DependManager;
 import com.imageworks.spcue.service.HostManager;
 import com.imageworks.spcue.service.JobLauncher;
 import com.imageworks.spcue.service.JobManager;
+import com.imageworks.spcue.service.JobManagerSupport;
 import com.imageworks.spcue.test.AssumingPostgresEngine;
 import com.imageworks.spcue.util.CueUtil;
 
@@ -84,6 +85,9 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
 
     @Resource
     JobManager jobManager;
+
+    @Resource
+    JobManagerSupport jobManagerSupport;
 
     @Resource
     JobLauncher jobLauncher;
@@ -290,17 +294,25 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
                 frame.getId()));
     
         // Handle dependencies to allow transition to dead
-        handleDependencies(frame);
+        jobManagerSupport.satisfyWhatDependsOn(frame);
 
         // Verify terminating count
         int terminatingCount = jdbcTemplate.queryForObject(
             "SELECT int_terminating_count FROM job_stat WHERE pk_job=?",
             Integer.class,
             job.getId());
-        assertEquals(2, terminatingCount);
+        assertEquals(1, terminatingCount);
 
+        boolean updated = jdbcTemplate.update(
+            "UPDATE frame SET str_state = ?, ts_stopped = current_timestamp, " +
+            "int_version = int_version + 1 " +
+            "WHERE pk_frame = ? AND str_state = ?",
+            FrameState.DEAD.toString(),
+            frame.getFrameId(),
+            FrameState.TERMINATING.toString()
+        ) == 1;
 
-        assertTrue(frameDao.killTerminatingFrame(frame));
+        assertTrue(updated);
 
         // Verify frame state is DEAD
         assertEquals(FrameState.DEAD.toString(), 
@@ -322,19 +334,6 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
             Integer.class,
             job.getId());
         assertEquals(0, terminatingCount);
-    }
-
-    // Helper method to handle dependencies
-    private void handleDependencies(FrameDetail frame) {
-        // Get all active dependencies for this frame
-        List<LightweightDependency> dependencies = dependDao.getWhatDependsOn(frame, true);
-
-        for (LightweightDependency depend : dependencies) {
-            // Set each dependency to inactive
-            dependDao.setInactive(depend);
-        }
-
-        dependDao.decrementDependCount(frame);
     }
 
     @Test

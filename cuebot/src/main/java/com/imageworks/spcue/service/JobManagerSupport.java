@@ -59,6 +59,7 @@ public class JobManagerSupport {
     private static final Logger logger = LogManager.getLogger(JobManagerSupport.class);
 
     private JobManager jobManager;
+    
     private DependManager dependManager;
     private HostManager hostManager;
     private RqdClient rqdClient;
@@ -74,88 +75,96 @@ public class JobManagerSupport {
     }
 
     public boolean shutdownJob(JobInterface job, Source source, boolean isManualKill) {
+        /*
+            * Satisfy any dependencies on just the
+            * job record, not layers or frames.
+            */
+        satisfyWhatDependsOn(job);
 
-        if (jobManager.shutdownJob(job)) {
+        if (departmentManager.isManaged(job)) {
+            departmentManager.syncJobsWithTask(job);
+        }
 
-            /*
-             * Satisfy any dependencies on just the
-             * job record, not layers or frames.
-             */
-            satisfyWhatDependsOn(job);
+        if (isManualKill) {
+            handleManualKill(job, source);
+        }
 
-            if (departmentManager.isManaged(job)) {
-                departmentManager.syncJobsWithTask(job);
+        // Wait for all frames to terminate
+        boolean allFramesTerminated = jobManager.waitForFramesToTerminate(job);
+
+        if (allFramesTerminated) {
+            boolean jobFinished = jobManager.shutdownJob(job);
+            if(jobFinished) {
+                logger.info("Job finished: " + job.getName());
+
+                /*
+                * Send mail after all frames have been stopped and job is finished
+                */
+                emailSupport.sendShutdownEmail(job);
+                return true;
             }
-
-            if (isManualKill) {
-
-                System.out.println("14 JobManagerSupport: shutdownJob: " + job.getName() + "/" + job.getId() +
-                        " is being manually killed by " + source.toString());
-
-                logger.info(job.getName() + "/" + job.getId() +
-                        " is being manually killed by " + source.toString());
-
-                /**
-                 * Sleep a bit here in case any frames were
-                 * dispatched during the job shutdown process.
-                 */
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e1) {
-                    logger.info(job.getName() + "/" + job.getId() +
-                            " shutdown thread was interrupted.");
-                    Thread.currentThread().interrupt();
-                }
-
-                FrameSearchInterface search = frameSearchFactory.create(job);
-                FrameSearchCriteria newCriteria = search.getCriteria();
-                FrameStateSeq states = newCriteria.getStates().toBuilder()
-                        .addFrameStates(FrameState.RUNNING)
-                        .build();
-                search.setCriteria(newCriteria.toBuilder().setStates(states).build());
-                
-                System.out.println("15 JobManagerSupport starting search to findFrames: " + search.toString());
-
-                for (FrameInterface frame: jobManager.findFrames(search)) {
-
-                    System.out.println("16 JobManagerSupport: shutdownJob: found frame: " + frame.getName() + "/" + frame.getId());
-
-                    VirtualProc proc = null;
-                    try {
-                        proc = hostManager.findVirtualProc(frame);
-                    }
-                    catch (DataAccessException e) {
-                        logger.warn("Unable to find proc to kill frame " + frame +
-                                " on job shutdown operation, " + e);
-                    }
-
-                    if (manualStopFrame(frame, FrameState.TERMINATING)) {
-                        System.out.println("17 JobManagerSupport: shutdownJob: stopping frame: " + frame.getName() + "/" + frame.getId());
-                        try {
-                            if (proc != null) {
-                                kill(proc, source);
-                            }
-                        } catch (DataAccessException e) {
-                            logger.warn("Failed to kill frame " + frame +
-                                    " on job shutdown operation, " + e);
-                        }
-                        catch (Exception e) {
-                            logger.warn("error killing frame: " + frame);
-                        }
-                    }
-                }
-            }
-
-            /*
-             * Send mail after all frames have been stopped or else the email
-             * will have inaccurate numbers.
-             */
-            emailSupport.sendShutdownEmail(job);
-
-            return true;
         }
 
         return false;
+    }
+
+    private void handleManualKill(JobInterface job, Source source) {
+
+        System.out.println("14 JobManagerSupport: shutdownJob: " + job.getName() + "/" + job.getId() +
+                " is being manually killed by " + source.toString());
+
+        logger.info(job.getName() + "/" + job.getId() +
+                " is being manually killed by " + source.toString());
+
+        /**
+         * Sleep a bit here in case any frames were
+         * dispatched during the job shutdown process.
+         */
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e1) {
+            logger.info(job.getName() + "/" + job.getId() +
+                    " shutdown thread was interrupted.");
+            Thread.currentThread().interrupt();
+        }
+
+        FrameSearchInterface search = frameSearchFactory.create(job);
+        FrameSearchCriteria newCriteria = search.getCriteria();
+        FrameStateSeq states = newCriteria.getStates().toBuilder()
+                .addFrameStates(FrameState.RUNNING)
+                .build();
+        search.setCriteria(newCriteria.toBuilder().setStates(states).build());
+        
+        System.out.println("15 JobManagerSupport starting search to findFrames: " + search.toString());
+
+        for (FrameInterface frame: jobManager.findFrames(search)) {
+
+            System.out.println("16 JobManagerSupport: shutdownJob: found frame: " + frame.getName() + "/" + frame.getId());
+
+            VirtualProc proc = null;
+            try {
+                proc = hostManager.findVirtualProc(frame);
+            }
+            catch (DataAccessException e) {
+                logger.warn("Unable to find proc to kill frame " + frame +
+                        " on job shutdown operation, " + e);
+            }
+
+            if (manualStopFrame(frame, FrameState.TERMINATING)) {
+                System.out.println("17 JobManagerSupport: shutdownJob: stopping frame: " + frame.getName() + "/" + frame.getId());
+                try {
+                    if (proc != null) {
+                        kill(proc, source);
+                    }
+                } catch (DataAccessException e) {
+                    logger.warn("Failed to kill frame " + frame +
+                            " on job shutdown operation, " + e);
+                }
+                catch (Exception e) {
+                    logger.warn("error killing frame: " + frame);
+                }
+            }
+        }
     }
 
     public void reorderJob(JobInterface job, FrameSet frameSet, Order order) {

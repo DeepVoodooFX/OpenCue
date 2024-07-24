@@ -112,7 +112,8 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
                 "int_waiting_count + " +
                 "int_running_count + " +
                 "int_dead_count + " +
-                "int_depend_count "+
+                "int_depend_count + "+
+                "int_terminating_count "+
             ") " +
         "FROM " +
             "layer_stat " +

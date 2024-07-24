@@ -406,7 +406,7 @@ public class FrameCompleteHandlerTests extends TransactionalTest {
         dispatchSupport.stopFrame(dispatchFrame, FrameState.DEAD, report.getExitStatus(),
                 report.getFrame().getMaxRss());
         frameCompleteHandler.handlePostFrameCompleteOperations(proc,
-                report, dispatchJob, dispatchFrame, FrameState.WAITING, frameDetail);
+                report, dispatchJob, dispatchFrame, FrameState.DEAD, frameDetail);
 
         assertFalse(jobManager.isLayerComplete(layer));
 

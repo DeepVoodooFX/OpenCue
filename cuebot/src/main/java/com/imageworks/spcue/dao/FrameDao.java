@@ -164,19 +164,6 @@ public interface FrameDao {
     boolean updateFrameState(FrameInterface frame, FrameState state);
 
     /**
-     * Updates the termination state.
-     *
-     * @param frame
-     * @param state
-     * @param exitStatus
-     */
-    boolean killTerminatingFrame(FrameInterface frame);
-
-    boolean decrementTerminatingCount(FrameInterface frame);
-
-    void incrementTerminatingCount(FrameInterface frame);
-
-    /**
      * Updates a frame to indicate its now running.
      *
      * @param proc

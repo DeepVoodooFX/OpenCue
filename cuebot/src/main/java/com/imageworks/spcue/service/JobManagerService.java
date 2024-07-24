@@ -353,9 +353,7 @@ public class JobManagerService implements JobManager {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public boolean shutdownJob(JobInterface job) {
-        logger.info("Initiating shutdown for job: " + job.getName());
-    
+    public boolean waitForFramesToTerminate(JobInterface job) {
         boolean allFramesTerminated = false;
         int maxAttempts = 60;
         int attempts = 0;
@@ -377,9 +375,13 @@ public class JobManagerService implements JobManager {
     
         if (!allFramesTerminated) {
             logger.warn("Not all frames terminated for job: " + job.getName() + " after " + maxAttempts + " attempts.");
-            return false;
         }
     
+        return allFramesTerminated;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public boolean shutdownJob(JobInterface job) {
         // Update job to finished state
         if (jobDao.updateJobFinished(job)) {
             logger.info("Job updated to finished state: " + job.getName());
@@ -387,6 +389,7 @@ public class JobManagerService implements JobManager {
             logger.info("Activating post jobs for: " + job.getName());
             return true;
         }
+
         return false;
     }
 

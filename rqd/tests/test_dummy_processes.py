@@ -22,12 +22,12 @@ def create_and_submit_job(scenario, wait_time):
                      user=os.environ.get('USER', 'unknown'))
         
         logger.info("Creating dummy layer")
-        dummy_command = f"""python3 /ParkCounty/apps/lnx-exo/cuedev/Opencue_old/rqd/tests/dummy_processes.py --scenario {scenario} --wait-time {wait_time}"""
-        dummy_layer = Shell("dummy_layer", range='1-4', command=dummy_command.split(), kill_signal="SIGTERM", threadable=True)
+        dummy_command = f"""python3 /ParkCounty/apps/lnx-exo/cuedev/Opencue/rqd/tests/dummy_processes.py --scenario {scenario} --wait-time {wait_time}"""
+        dummy_layer = Shell("dummy_layer", range='1-10', command=dummy_command.split(), kill_signal="SIGTERM", threadable=True)
         ol.add_layer(dummy_layer)
         
         logger.info("Launching job")
-        result = cuerun.launch(ol, range="1-2", use_pycuerun=False)
+        result = cuerun.launch(ol, range="1-5", use_pycuerun=False)
         logger.info(f"cuerun.launch returned: {result}")
 
         if isinstance(result, list):

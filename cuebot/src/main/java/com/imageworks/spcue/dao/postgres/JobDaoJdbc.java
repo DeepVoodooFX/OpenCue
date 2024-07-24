@@ -172,7 +172,8 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
                 "int_running_count + " +
                 "int_dead_count + " +
                 "int_depend_count + " +
-                "int_checkpoint_count " +
+                "int_checkpoint_count + " +
+                "int_terminating_count " +
             ") " +
         "FROM " +
             "job_stat " +
@@ -620,16 +621,30 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
         "AND " +
             "job.b_paused = false " +
         "AND " +
-            "job.b_auto_book = true " +
-        "AND " +
             "job.pk_job = ?";
 
     @Override
     public boolean hasTerminatingFrames(JobInterface job) {
+        System.out.println("Checking for terminating frames for job ID: " + job.getJobId());
+    
         try {
-            return getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
-                    Integer.class, job.getJobId()) > 0;
-        } catch (DataAccessException e) {
+            System.out.println("Executing SQL query to check for terminating frames");
+            Integer count = getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
+                    Integer.class, job.getJobId());
+            
+            if (count == null) {
+                System.out.println("WARNING: Query returned null for job ID: " + job.getJobId() + ". Assuming no terminating frames.");
+                return false;
+            }
+    
+            boolean hasTerminatingFrames = count > 0;
+            System.out.println("Job ID: " + job.getJobId() + " has terminating frames: " + hasTerminatingFrames + ". Count: " + count);
+            return hasTerminatingFrames;
+    
+        } catch (Exception e) {
+            System.out.println("ERROR: Unexpected error occurred while checking for terminating frames for job ID: " + job.getJobId());
+            System.out.println("Error message: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

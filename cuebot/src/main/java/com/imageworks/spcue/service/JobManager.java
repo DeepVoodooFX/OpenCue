@@ -129,6 +129,13 @@ public interface JobManager {
     boolean shutdownJob(JobInterface job);
 
     /**
+     * Waits for all frames to terminate before returning.
+     *
+     * @param JobDetail job
+     */
+    boolean waitForFramesToTerminate(JobInterface job);
+
+    /**
      * Finds and active job by name.
      *
      * @param String name

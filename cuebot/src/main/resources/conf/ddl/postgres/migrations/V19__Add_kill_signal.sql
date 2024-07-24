@@ -108,30 +108,6 @@ and jh.dt_last_modified < (
     from history_period
 );
 
--- Add a new trigger to handle transition to and from TERMINATING state
-CREATE OR REPLACE FUNCTION trigger__handle_terminating_state()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.str_state = 'TERMINATING' AND OLD.str_state != 'TERMINATING' THEN
-        -- Frame is entering TERMINATING state
-        UPDATE job_stat SET int_terminating_count = int_terminating_count + 1 WHERE pk_job = NEW.pk_job;
-        UPDATE layer_stat SET int_terminating_count = int_terminating_count + 1 WHERE pk_layer = NEW.pk_layer;
-    ELSIF OLD.str_state = 'TERMINATING' AND NEW.str_state != 'TERMINATING' THEN
-        -- Frame is leaving TERMINATING state
-        UPDATE job_stat SET int_terminating_count = int_terminating_count - 1 WHERE pk_job = NEW.pk_job;
-        UPDATE layer_stat SET int_terminating_count = int_terminating_count - 1 WHERE pk_layer = NEW.pk_layer;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER handle_terminating_state
-BEFORE UPDATE ON frame
-FOR EACH ROW
-WHEN (OLD.str_state IS DISTINCT FROM NEW.str_state)
-EXECUTE FUNCTION trigger__handle_terminating_state();
-
-
 CREATE FUNCTION trigger__update_frame_to_terminating()
 RETURNS TRIGGER AS $body$
 BEGIN
