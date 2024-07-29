@@ -124,24 +124,6 @@ FOR EACH ROW
   WHEN (NEW.str_state = 'TERMINATING' AND OLD.str_state = 'RUNNING')
   EXECUTE PROCEDURE trigger__update_frame_to_terminating();
 
-CREATE FUNCTION trigger__check_terminating_timeout()
-RETURNS TRIGGER AS $body$
-BEGIN
-    IF NEW.str_state = 'TERMINATING' AND 
-       (EXTRACT(EPOCH FROM (current_timestamp - NEW.ts_updated)) > 60) THEN
-        NEW.str_state := 'DEAD';
-        NEW.int_exit_status := 1;
-    END IF;
-    RETURN NEW;
-END;
-$body$
-LANGUAGE PLPGSQL;
-
-CREATE TRIGGER check_terminating_timeout BEFORE UPDATE ON frame
-FOR EACH ROW
-  WHEN (NEW.str_state = 'TERMINATING')
-  EXECUTE PROCEDURE trigger__check_terminating_timeout();
-
 CREATE OR REPLACE FUNCTION trigger__before_delete_job()
 RETURNS TRIGGER AS $body$
 DECLARE

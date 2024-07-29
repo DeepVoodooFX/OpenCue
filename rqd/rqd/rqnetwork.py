@@ -78,6 +78,7 @@ class RunningFrame(object):
         self.lluTime = 0
         self.killSignal = runFrame.kill_signal
         self.childrenProcs = {}
+        self.kill_timeout_start = None
 
     def runningFrameInfo(self):
         """Returns the RunningFrameInfo object"""
@@ -162,11 +163,20 @@ class RunningFrame(object):
                 try:
                     if platform.system() == "Windows":
                         # TODO: UPDATE THIS TO USE THE NEW KILL SIGNAL
+                        # if self.killSignal == 15:
+                        #     subprocess.Popen('taskkill /T /PID %i' % self.pid, shell=True)
+                        # else:
                         subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
                     else:
                         log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)
                         print("Killing frameId=%s pid=%s with signal %s" % (self.frameId, self.pid, self.killSignal))
-                        os.killpg(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
+                        # kill command process pid instead of time pid
+                        # os.kill(command.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
+                        os.kill(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
+
+                    self.kill_timeout_start = time.time()
+
+                    # if kill_timeout is set, set kill state to pending
                 finally:
                     log.warning(
                         "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)
@@ -181,6 +191,17 @@ class RunningFrame(object):
             log.warning(
                 "Kill requested after frameAttendantThread has exited for: %s", self.frameId)
             self.rqCore.deleteFrame(self.frameId)
+    
+    def is_kill_in_progress(self):
+        return self.kill_timeout_start is not None
+
+    def get_kill_elapsed_time(self):
+        if self.kill_timeout_start is None:
+            return 0
+        return time.time() - self.kill_timeout_start
+
+    def clear_kill_timeout(self):
+        self.kill_timeout_start = None
 
 
 class GrpcServer(object):

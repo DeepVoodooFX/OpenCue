@@ -77,6 +77,7 @@ RQD_CREATE_USER_IF_NOT_EXISTS = True
 RQD_TAGS = ''
 RQD_PREPEND_TIMESTAMP = False
 
+KILL_TIMEOUT_DURATION = 60
 DEFAULT_KILL_SIGNAL = signal.SIGKILL
 
 signal_dict = {name: getattr(signal, name) for name in dir(signal) 

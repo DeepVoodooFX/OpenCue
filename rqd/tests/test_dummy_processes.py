@@ -110,7 +110,7 @@ def monitor_job(job, wait_time):
                     
                     # Wait for the job to be killed
                     for _ in range(1024):
-                        time.sleep(0.01)
+                        time.sleep(1)
                         job = opencue.api.getJob(job.id())
                         state = job.state()
                         frames = job.getFrames()
