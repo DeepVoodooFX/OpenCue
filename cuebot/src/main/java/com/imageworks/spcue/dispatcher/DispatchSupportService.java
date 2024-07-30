@@ -207,10 +207,12 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.NEVER)
     public void runFrame(VirtualProc proc, DispatchFrame frame) {
         try {
-            rqdClient.launchFrame(prepareRqdRunFrame(proc, frame), proc);
+            RunFrame runFrame = prepareRqdRunFrame(proc, frame);
+            rqdClient.launchFrame(runFrame, proc);
             dispatchedProcs.getAndIncrement();
         }
         catch (Exception e) {
+            logger.error("Error in runFrame method. proc: {}, frame: {}", proc, frame, e);
             throw new DispatcherException(proc.getName() +
                     " could not be booked on " + frame.getName() + ", " + e);
         }
@@ -327,15 +329,25 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.REQUIRED)
     public boolean stopFrame(FrameInterface frame, FrameState state,
                              int exitStatus, long maxRss) {
+                                System.out.println("stopFrame called");
         logger.trace("stopping frame: " + frame);
-        if (frameDao.updateFrameStopped(frame, state,
-                exitStatus, maxRss)) {
-            // Update max rss up the chain.
-            layerDao.updateLayerMaxRSS(frame, maxRss, false);
-            jobDao.updateMaxRSS(frame, maxRss);
-            
-            procDao.clearVirtualProcAssignment(frame);
-            return true;
+        try {
+
+            if (frameDao.updateFrameStopped(frame, state,
+                    exitStatus, maxRss)) {
+                        System.out.println("frame stopped");
+                // Update max rss up the chain.
+                layerDao.updateLayerMaxRSS(frame, maxRss, false);
+                System.out.println("layer max rss updated");
+                jobDao.updateMaxRSS(frame, maxRss);
+                System.out.println("job max rss updated");
+                procDao.clearVirtualProcAssignment(frame);
+                System.out.println("proc cleared");
+
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return false;
@@ -356,6 +368,8 @@ public class DispatchSupportService implements DispatchSupport {
 
     @Transactional(propagation = Propagation.SUPPORTS)
     public RunFrame prepareRqdRunFrame(VirtualProc proc, DispatchFrame frame) {
+        System.out.println("prepareRqdRunFrame called");
+
         int threads =  proc.coresReserved / 100;
         if (threads < 1) {
             threads = 1;
@@ -372,7 +386,6 @@ public class DispatchSupportService implements DispatchSupport {
         if (endChunkIndex > lastFrameIndex) {
             endChunkIndex = lastFrameIndex;
         }
-
 
         RunFrame.Builder builder = RunFrame.newBuilder()
                 .setShot(frame.shot)
@@ -427,6 +440,7 @@ public class DispatchSupportService implements DispatchSupport {
          * Update the Constant.py file when updating tokens here, they will appear in the cuesubmit tooltip popup.
          */
 
+        System.out.println("builder: " + builder);
         frame.uid.ifPresent(builder::setUid);
 
         return builder.build();
