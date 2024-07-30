@@ -107,86 +107,16 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
             "frame.int_version = ? ";
 
     @Override
-    public boolean updateFrameStopped(FrameInterface frame, FrameState state, int exitStatus, long maxRss) {
-        System.out.println("Entering updateFrameStopped function");
-        System.out.println("Input parameters:");
-        System.out.println("  frame ID: " + frame.getFrameId());
-        System.out.println("  state: " + state);
-        System.out.println("  exitStatus: " + exitStatus);
-        System.out.println("  maxRss: " + maxRss);
-        System.out.println("  frame version: " + frame.getVersion());
-    
-        // Verify current state in the database
-        String currentState = verifyAndLogDatabaseElement("SELECT str_state FROM frame WHERE pk_frame = ?", 
-                                                             String.class, frame.getFrameId(), "Current state");
-    
-        // Verify current version in the database
-        int currentVersion = verifyAndLogDatabaseElement("SELECT int_version FROM frame WHERE pk_frame = ?", 
-                                                            Integer.class, frame.getFrameId(), "Current version");
-    
-        if (!currentState.equals(FrameState.RUNNING.toString()) && !currentState.equals(FrameState.TERMINATING.toString())) {
-            System.out.println("Error: Current state is neither RUNNING nor TERMINATING. Aborting update.");
-            return false;
-        }
-    
-        if (currentVersion != frame.getVersion()) {
-            System.out.println("Error: Version mismatch. Database version: " + currentVersion + 
-                                ", Frame version: " + frame.getVersion() + ". Aborting update.");
-            return false;
-        }
-    
-        System.out.println("SQL Query:");
-        System.out.println(UPDATE_FRAME_STOPPED);
-    
-        System.out.println("Executing update with current state: " + currentState);
-        System.out.println("State before update: " + state.toString());
-        int updatedRows = getJdbcTemplate().update(UPDATE_FRAME_STOPPED,
-                state.toString(),
-                exitStatus,
-                maxRss,
-                frame.getFrameId(),
-                currentState,
-                frame.getVersion());
-    
-        System.out.println("Update result: " + updatedRows + " rows affected");
-    
-        if (updatedRows == 1) {
-            // Verify updated state in the database
-            String updatedState = verifyAndLogDatabaseElement("SELECT str_state FROM frame WHERE pk_frame = ?", 
-                                                                String.class, frame.getFrameId(), "Updated state");
-    
-            // Verify updated version in the database
-            int updatedVersion = verifyAndLogDatabaseElement("SELECT int_version FROM frame WHERE pk_frame = ?", 
-                                                                Integer.class, frame.getFrameId(), "Updated version");
-    
-            // Verify updated exit status in the database
-            int updatedExitStatus = verifyAndLogDatabaseElement("SELECT int_exit_status FROM frame WHERE pk_frame = ?", 
-                                                                Integer.class, frame.getFrameId(), "Updated exit status");
-    
-            // Verify updated max_rss in the database
-            long updatedMaxRss = verifyAndLogDatabaseElement("SELECT int_mem_max_used FROM frame WHERE pk_frame = ?", 
-                                                                Long.class, frame.getFrameId(), "Updated max RSS");
-    
-            System.out.println("Update verification:");
-            System.out.println("  Expected state: " + state.toString() + ", Actual state: " + updatedState);
-            System.out.println("  Expected version: " + (frame.getVersion() + 1) + ", Actual version: " + updatedVersion);
-            System.out.println("  Expected exit status: " + exitStatus + ", Actual exit status: " + updatedExitStatus);
-            System.out.println("  Expected max RSS: " + maxRss + ", Actual max RSS: " + updatedMaxRss);
-        }
-    
-        boolean updateSuccessful = updatedRows == 1;
-        System.out.println("Update successful: " + updateSuccessful);
-        System.out.println("Exiting updateFrameStopped function");
-    
-        return updateSuccessful;
-    }
-    
-    private <T> T verifyAndLogDatabaseElement(String sql, Class<T> elementType, Object frameId, String elementName) {
-        T element = getJdbcTemplate().queryForObject(sql, elementType, frameId);
-        System.out.println(elementName + ": " + element);
-        return element;
-    }
+    public boolean updateFrameStopped(FrameInterface frame, FrameState state, 
+            int exitStatus, long maxRss) {
 
+
+        return getJdbcTemplate().update(UPDATE_FRAME_STOPPED,
+                state.toString(), exitStatus, maxRss,
+                frame.getFrameId(), FrameState.RUNNING.toString(),
+                frame.getVersion()) == 1;
+    }
+    
     private static final String UPDATE_FRAME_REASON =
         "UPDATE "+
             "frame "+

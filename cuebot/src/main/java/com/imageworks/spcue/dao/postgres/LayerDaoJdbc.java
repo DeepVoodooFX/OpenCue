@@ -327,19 +327,13 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
      @Override
      public void insertLayerDetail(LayerDetail l) {
         l.id =  SqlUtil.genKeyRandom();
-
-        System.out.println("LayerDetail DB: Kill Signal: " + l.killSignal);
-        try {
-            getJdbcTemplate().update(INSERT_LAYER,
-            l.id, l.jobId, l.name, l.command,
-            l.range, l.chunkSize, l.dispatchOrder,
-            StringUtils.join(l.tags," | "), l.type.toString(),
-            l.minimumCores, l.maximumCores, l.isThreadable,
-            l.minimumMemory, l.minimumGpus, l.maximumGpus, l.minimumGpuMemory, StringUtils.join(l.services,","),
-            l.timeout, l.timeout_llu, l.killSignal);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        getJdbcTemplate().update(INSERT_LAYER,
+                l.id, l.jobId, l.name, l.command,
+                l.range, l.chunkSize, l.dispatchOrder,
+                StringUtils.join(l.tags," | "), l.type.toString(),
+                l.minimumCores, l.maximumCores, l.isThreadable,
+                l.minimumMemory, l.minimumGpus, l.maximumGpus, l.minimumGpuMemory, StringUtils.join(l.services,","),
+                l.timeout, l.timeout_llu, l.killSignal);
     }
 
     @Override
@@ -899,25 +893,15 @@ public class LayerDaoJdbc extends JdbcDaoSupport implements LayerDao {
 
     @Override
     public String findKillSignal(LayerInterface layer) {
-        try {
-            return getJdbcTemplate().queryForObject(
-                    "SELECT str_kill_signal FROM layer WHERE pk_layer=?",
-                    String.class, layer.getLayerId());
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException("The layer " +
-                    layer.getName() + " was not found in " + layer.getJobId() + e, 0);
-        }
+        return getJdbcTemplate().queryForObject(
+                "SELECT str_kill_signal FROM layer WHERE pk_layer=?",
+                String.class, layer.getLayerId());
     }
 
     @Override
     public void updateKillSignal(LayerInterface layer, String signal) {
-        try {
-            getJdbcTemplate().update(
-                    "UPDATE layer SET str_kill_signal=? WHERE pk_layer=?",
-                    signal, layer.getLayerId());
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException("The layer " +
-                    layer.getName() + " was not found in " + layer.getJobId() + e, 0);
-        }
+        getJdbcTemplate().update(
+                "UPDATE layer SET str_kill_signal=? WHERE pk_layer=?",
+                signal, layer.getLayerId());
     }
 }

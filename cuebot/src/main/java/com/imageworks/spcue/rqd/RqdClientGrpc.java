@@ -32,12 +32,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.HostInterface;
-import com.imageworks.spcue.LayerInterface;
 import com.imageworks.spcue.VirtualProc;
 import com.imageworks.spcue.grpc.host.LockState;
-import com.imageworks.spcue.grpc.job.FrameState;
 import com.imageworks.spcue.grpc.report.RunningFrameInfo;
 import com.imageworks.spcue.grpc.rqd.RqdInterfaceGrpc;
 import com.imageworks.spcue.grpc.rqd.RqdStaticGetRunFrameRequest;
@@ -52,7 +49,6 @@ import com.imageworks.spcue.grpc.rqd.RunFrame;
 import com.imageworks.spcue.grpc.rqd.RunningFrameGrpc;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusRequest;
 import com.imageworks.spcue.grpc.rqd.RunningFrameStatusResponse;
-import com.imageworks.spcue.service.JobManagerService;
 
 public final class RqdClientGrpc implements RqdClient {
     private static final Logger logger = LogManager.getLogger(RqdClientGrpc.class);
@@ -62,7 +58,6 @@ public final class RqdClientGrpc implements RqdClient {
     private final int rqdCacheConcurrency;
     private final int rqdServerPort;
     private final int rqdTaskDeadlineSeconds;
-    private JobManagerService jobManagerService;
     private LoadingCache<String, ManagedChannel> channelCache;
 
     private boolean testMode = false;
@@ -220,14 +215,8 @@ public final class RqdClientGrpc implements RqdClient {
     }
 
     public void launchFrame(final RunFrame frame, final VirtualProc proc) {
-        System.out.println("launchFrame");
-        System.out.println("frame: " + frame);
-        System.out.println("proc: " + proc);
         RqdStaticLaunchFrameRequest request =
                 RqdStaticLaunchFrameRequest.newBuilder().setRunFrame(frame).build();
-
-        
-        System.out.println("request: " + request);
 
         if (testMode) {
             return;
@@ -235,7 +224,6 @@ public final class RqdClientGrpc implements RqdClient {
 
         try {
             getStub(proc.hostName).launchFrame(request);
-            System.out.println("frame launched");
         } catch (StatusRuntimeException | ExecutionException e) {
             throw new RqdClientException("failed to launch frame", e);
         }

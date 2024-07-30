@@ -625,28 +625,8 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
 
     @Override
     public boolean hasTerminatingFrames(JobInterface job) {
-        System.out.println("Checking for terminating frames for job ID: " + job.getJobId());
-    
-        try {
-            System.out.println("Executing SQL query to check for terminating frames");
-            Integer count = getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
-                    Integer.class, job.getJobId());
-            
-            if (count == null) {
-                System.out.println("WARNING: Query returned null for job ID: " + job.getJobId() + ". Assuming no terminating frames.");
-                return false;
-            }
-    
-            boolean hasTerminatingFrames = count > 0;
-            System.out.println("Job ID: " + job.getJobId() + " has terminating frames: " + hasTerminatingFrames + ". Count: " + count);
-            return hasTerminatingFrames;
-    
-        } catch (Exception e) {
-            System.out.println("ERROR: Unexpected error occurred while checking for terminating frames for job ID: " + job.getJobId());
-            System.out.println("Error message: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
+        return getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
+        Integer.class, job.getJobId()) > 0;
     }
 
     private static final String IS_JOB_OVER_MIN_CORES =

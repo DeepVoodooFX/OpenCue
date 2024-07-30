@@ -322,13 +322,10 @@ public class CoreUnitDispatcher implements Dispatcher {
 
     public void dispatchProcToJob(VirtualProc proc, JobInterface job)
     {
-        logger.info("Dispatching proc {} to job {}", proc, job);
-
         // Do not throttle this method
         for (DispatchFrame frame:
             dispatchSupport.findNextDispatchFrames(job, proc,
                     getIntProperty("dispatcher.frame_query_max"))) {
-                        logger.info("Frame found: " + frame);
             try {
                 boolean success = new DispatchFrameTemplate(proc, job, frame, true) {
                     public void wrapDispatchFrame() {
@@ -360,27 +357,24 @@ public class CoreUnitDispatcher implements Dispatcher {
 
     @Override
     public void dispatch(DispatchFrame frame, VirtualProc proc) {
-        logger.debug("Dispatching frame {} to proc {}", frame, proc);
-    
-        try {
-            dispatchSupport.startFrame(proc, frame);
-            dispatchSupport.reserveProc(proc, frame);
-            if (!testMode) {
-                dispatchSupport.runFrame(proc, frame);
-            }
-            logger.info("Successfully dispatched frame {} to proc {}", frame, proc);
-        } catch (ResourceReservationFailureException e) {
-            logger.error("Failed to reserve resources for frame {} on proc {}", frame, proc, e);
-            throw new DispatcherException("Resource reservation failed", e);
-        } catch (RqdClientException e) {
-            logger.error("RQD communication error for frame {} on proc {}", frame, proc, e);
-            throw new DispatcherException("RQD communication failed", e);
-        } catch (NullPointerException e) {
-            logger.error("NullPointerException occurred while dispatching frame {} to proc {}", frame, proc, e);
-            throw new DispatcherException("Null value encountered during dispatch", e);
-        } catch (Exception e) {
-            logger.error("Unexpected error dispatching frame {} to proc {}", frame, proc, e);
-            throw new DispatcherException("Dispatch failed due to unexpected error", e);
+        /*
+         * The frame is reserved, the proc is created, now update
+         * the frame to the running state.
+         */
+        dispatchSupport.startFrame(proc, frame);
+
+        /*
+         * Creates a proc to run on the specified frame.  Throws
+         * a ResourceReservationFailureException if the proc
+         * cannot be created due to lack of resources.
+         */
+        dispatchSupport.reserveProc(proc, frame);
+
+        /*
+         * Communicate with RQD to run the frame.
+         */
+        if (!testMode) {
+            dispatchSupport.runFrame(proc,frame);
         }
     }
 

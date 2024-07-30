@@ -293,7 +293,7 @@ class FrameAttendantThread(threading.Thread):
                 self.runFrame.log_file, e, traceback.extract_tb(sys.exc_info()[2]))
             
     def _find_process_by_command(self, top_pid, command):
-        """Find all processes running the specified command."""
+        """Find the child command process running for the specified command process group."""
         log.info(f"Finding all processes running command: {command}")
         matching_pids = set()
 
@@ -341,6 +341,7 @@ class FrameAttendantThread(threading.Thread):
             return []
 
     def _wait_for_command_process_to_exit(self):
+        """Wait for the command process to exit, or kill it if it takes too long"""
         wait_start = time.time()
         while self.commandProcess is None:
             if time.time() - wait_start > 30:
@@ -362,10 +363,11 @@ class FrameAttendantThread(threading.Thread):
                 # Process is still running
                 if self.frameInfo.is_kill_in_progress():
                     log.info(f"time time: {time.time()}")
-                    log.info(f"Kill timeout start: {self.frameInfo.kill_timeout_start}")
-                    log.info(f"Comapre to current time: {time.time() >= self.frameInfo.kill_timeout_start}")
+                    log.info(f"Kill timeout start: {self.frameInfo.kill_timeout_start }")
+                    log.info(f"Ending Time: {self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION}")
+                    log.info(f"Comapre to ending time: {time.time() >= (self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION)}")
                     
-                    if time.time() >= self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION:
+                    if time.time() >= (self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION):
                             print(f"Process {self.commandProcess.pid} timed out... killing with SIGKILL")
                             try:
                                 rqd.rqutil.permissionsUser(self.runFrame.uid, self.runFrame.gid)
@@ -375,6 +377,7 @@ class FrameAttendantThread(threading.Thread):
                                 log.error(f"Failed to kill process {self.commandProcess.pid} with SIGKILL")
                             except psutil.NoSuchProcess:
                                 pass  # Process already terminated
+
                             exit_code = self.commandProcess.wait(timeout=1)
                             return exit_code
 

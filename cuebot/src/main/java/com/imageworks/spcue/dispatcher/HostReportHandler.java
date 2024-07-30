@@ -615,11 +615,8 @@ public class HostReportHandler {
             return false;
         }
 
-        FrameInterface frame = jobManager.getFrame(frameId);
-        
         if (dispatcher.isTestMode()) {
             // Different threads don't share the same database state on the test environment
-
             (new DispatchRqdKillFrame(hostname, frameId, killCause.toString(), rqdClient)).run();
         } else {
             try {

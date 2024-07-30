@@ -293,8 +293,14 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
                 String.class, 
                 frame.getId()));
     
-        // Handle dependencies to allow transition to dead
-        jobManagerSupport.satisfyWhatDependsOn(frame);
+        List<LightweightDependency> dependencies = dependDao.getWhatDependsOn(frame, true);
+
+        for (LightweightDependency depend : dependencies) {
+            // Set each dependency to inactive
+            dependDao.setInactive(depend);
+        }
+
+        dependDao.decrementDependCount(frame);
 
         // Verify terminating count
         int terminatingCount = jdbcTemplate.queryForObject(

@@ -132,7 +132,6 @@ public class FrameCompleteHandler {
      * @param report
      */
     public void handleFrameCompleteReport(final FrameCompleteReport report) {
-        System.out.println("1 Handling frame complete report: " + report);
 
         /*
          * A boolean we're going to set to true if we can detect
@@ -153,13 +152,9 @@ public class FrameCompleteHandler {
             final FrameState newFrameState = determineFrameState(job, layer, frame, report);
             final String key = proc.getJobId() + "_" + report.getFrame().getLayerId() +
                                "_" + report.getFrame().getFrameId();
-            
-                               System.out.println("2 Frame state: " + newFrameState.toString());
-            
 
             if (dispatchSupport.stopFrame(frame, newFrameState, report.getExitStatus(),
                     report.getFrame().getMaxRss())) {
-                        System.out.println("3 Stopping frame: " + frame);
                 if (dispatcher.isTestMode()) {
                     // Database modifications on a threadpool cannot be captured by the test thread
                     handlePostFrameCompleteOperations(proc, report, job, frame,
@@ -169,7 +164,6 @@ public class FrameCompleteHandler {
                         @Override
                         public void run() {
                             try {
-                    System.out.println("4 Stopping frame: " + frame);
                                 handlePostFrameCompleteOperations(proc, report, job, frame,
                                         newFrameState, frameDetail);
                             } catch (Exception e) {
@@ -276,8 +270,6 @@ public class FrameCompleteHandler {
             dispatchSupport.updateUsageCounters(frame, report.getExitStatus());
 
             boolean isLayerComplete = false;
-
-            System.out.println("5 handlePostFrameCompleteOperations: Frame state: " + newFrameState.toString());
 
             if (newFrameState.equals(FrameState.SUCCEEDED)
                     || (!satisfyDependOnlyOnFrameSuccess
@@ -597,10 +589,7 @@ public class FrameCompleteHandler {
     public static final FrameState determineFrameState(DispatchJob job, LayerDetail layer,
                                                        DispatchFrame frame, FrameCompleteReport report) {
 
-                                                        System.out.println("Frame state: " + frame.state);
-                                                        System.out.println("Report : " + report);
-
-                                                        if (EnumSet.of(FrameState.WAITING, FrameState.EATEN).contains(
+        if (EnumSet.of(FrameState.WAITING, FrameState.EATEN).contains(
                 frame.state)) {
             return frame.state;
         } else if (frame.state.equals(FrameState.TERMINATING)) {
