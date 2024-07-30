@@ -63,7 +63,6 @@ import com.imageworks.spcue.service.DependManager;
 import com.imageworks.spcue.service.HostManager;
 import com.imageworks.spcue.service.JobLauncher;
 import com.imageworks.spcue.service.JobManager;
-import com.imageworks.spcue.service.JobManagerSupport;
 import com.imageworks.spcue.test.AssumingPostgresEngine;
 import com.imageworks.spcue.util.CueUtil;
 
@@ -85,9 +84,6 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
 
     @Resource
     JobManager jobManager;
-
-    @Resource
-    JobManagerSupport jobManagerSupport;
 
     @Resource
     JobLauncher jobLauncher;
@@ -283,10 +279,8 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
         JobDetail job = launchJob();
         FrameDetail frame = frameDao.findFrameDetail(job, "0001-pass_1");
     
-        // Update frame state to TERMINATING
         assertTrue(frameDao.updateFrameState(frame, FrameState.TERMINATING));
     
-        // Verify frame state in database
         assertEquals(FrameState.TERMINATING.toString(), 
             jdbcTemplate.queryForObject(
                 "SELECT str_state FROM frame WHERE pk_frame=?", 
@@ -296,13 +290,11 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
         List<LightweightDependency> dependencies = dependDao.getWhatDependsOn(frame, true);
 
         for (LightweightDependency depend : dependencies) {
-            // Set each dependency to inactive
             dependDao.setInactive(depend);
         }
 
         dependDao.decrementDependCount(frame);
 
-        // Verify terminating count
         int terminatingCount = jdbcTemplate.queryForObject(
             "SELECT int_terminating_count FROM job_stat WHERE pk_job=?",
             Integer.class,
@@ -320,21 +312,18 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
 
         assertTrue(updated);
 
-        // Verify frame state is DEAD
         assertEquals(FrameState.DEAD.toString(), 
             jdbcTemplate.queryForObject(
                 "SELECT str_state FROM frame WHERE pk_frame=?", 
                 String.class, 
                 frame.getId()));
 
-        // Verify dead count
         int deadCount = jdbcTemplate.queryForObject(
             "SELECT int_dead_count FROM job_stat WHERE pk_job=?",
             Integer.class,
             job.getId());
         assertEquals(1, deadCount);
     
-        // Verify terminating count is updated
         terminatingCount = jdbcTemplate.queryForObject(
             "SELECT int_terminating_count FROM job_stat WHERE pk_job=?",
             Integer.class,
@@ -388,20 +377,15 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
     @Transactional
     @Rollback(true)
     public void testUpdateFrameStopped() {
-        System.out.println("--- Starting testUpdateFrameStopped ---");
 
         DispatchHost host = createHost();
-        System.out.println("Host created: " + host.name);
-
         JobDetail job = launchJob();
-        System.out.println("Job launched: " + job.id);
 
         FrameDetail frame = frameDao.findFrameDetail(job, "0001-pass_1_preprocess");
         DispatchFrame fd = frameDao.getDispatchFrame(frame.getId());
-        System.out.println("Frame found: " + frame.getName() + ", Initial state: " + frame.state);
 
-        assertEquals("0001-pass_1_preprocess", frame.getName());
-        assertEquals(FrameState.WAITING, frame.state);
+        assertEquals("0001-pass_1_preprocess",frame.getName());
+        assertEquals(FrameState.WAITING,frame.state);
 
         VirtualProc proc = new VirtualProc();
         proc.allocationId = host.allocationId;
@@ -414,36 +398,23 @@ public class FrameDaoTests extends AbstractTransactionalJUnit4SpringContextTests
         proc.showId = frame.showId;
 
         procDao.insertVirtualProc(proc);
-        System.out.println("Virtual proc inserted: " + proc.getId());
-
         procDao.verifyRunningProc(proc.getId(), frame.getId());
-        System.out.println("Running proc verified");
 
         frameDao.updateFrameStarted(proc, fd);
-        System.out.println("Frame started update called");
 
         try {
             Thread.sleep(1001);
         } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         DispatchFrame fd2 = frameDao.getDispatchFrame(frame.getId());
-        System.out.println("Frame state before stop: " + fd2.state);
+        assertTrue(frameDao.updateFrameStopped(fd2, FrameState.DEAD, 1, 1000l));
 
-        boolean updateResult = frameDao.updateFrameStopped(fd2, FrameState.DEAD, 1, 1000L);
-        System.out.println("updateFrameStopped result: " + updateResult);
-
-        assertTrue("Frame update should succeed", updateResult);
-
-        String finalState = jdbcTemplate.queryForObject(
+        assertEquals(FrameState.DEAD.toString(),jdbcTemplate.queryForObject(
                 "SELECT str_state FROM frame WHERE pk_frame=?",
-                String.class, frame.getId());
-        System.out.println("Final frame state in DB: " + finalState);
-
-        assertEquals(FrameState.DEAD.toString(), finalState);
-
-        System.out.println("--- Ending testUpdateFrameStopped ---");
+                String.class, frame.getFrameId()));
     }
 
     @Test

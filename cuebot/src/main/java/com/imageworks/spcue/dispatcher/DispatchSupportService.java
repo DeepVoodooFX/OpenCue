@@ -207,12 +207,10 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.NEVER)
     public void runFrame(VirtualProc proc, DispatchFrame frame) {
         try {
-            RunFrame runFrame = prepareRqdRunFrame(proc, frame);
-            rqdClient.launchFrame(runFrame, proc);
+            rqdClient.launchFrame(prepareRqdRunFrame(proc, frame), proc);
             dispatchedProcs.getAndIncrement();
         }
         catch (Exception e) {
-            logger.error("Error in runFrame method. proc: {}, frame: {}", proc, frame, e);
             throw new DispatcherException(proc.getName() +
                     " could not be booked on " + frame.getName() + ", " + e);
         }
@@ -335,6 +333,7 @@ public class DispatchSupportService implements DispatchSupport {
             // Update max rss up the chain.
             layerDao.updateLayerMaxRSS(frame, maxRss, false);
             jobDao.updateMaxRSS(frame, maxRss);
+            
             procDao.clearVirtualProcAssignment(frame);
             return true;
         }

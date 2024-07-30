@@ -662,8 +662,6 @@ class FrameAttendantThread(threading.Thread):
                         err = "Failed to chmod log file! %s due to %s" % (runFrame.log_dir_file, e)
                         log.warning(err)
 
-                # TODO: possible update 
-
                 finally:
                     rqd.rqutil.permissionsLow()
 

@@ -171,7 +171,9 @@ public class JobManagerService implements JobManager {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void launchJobSpec(JobSpec spec) {
+
         for (BuildableJob job: spec.getJobs()) {
+
             JobDetail d = createJob(job);
             if (job.maxCoresOverride != null) {
                 jobDao.updateMaxCores(d,
@@ -254,10 +256,11 @@ public class JobManagerService implements JobManager {
             jobDao.insertEnvironment(job, buildableJob.env);
 
             for (BuildableLayer buildableLayer: buildableJob.getBuildableLayers()) {
+
                 LayerDetail layer = buildableLayer.layerDetail;
                 layer.jobId = job.id;
                 layer.showId = show.id;
-                
+
                 /** Not accurate anymore */
                 List<Integer> frames = CueUtil.normalizeFrameRange(layer.range,
                         layer.chunkSize);
@@ -354,7 +357,6 @@ public class JobManagerService implements JobManager {
             logger.info("activating post jobs");
             return true;
         }
-
         return false;
     }
 

@@ -107,7 +107,7 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
             "frame.int_version = ? ";
 
     @Override
-    public boolean updateFrameStopped(FrameInterface frame, FrameState state, 
+    public boolean updateFrameStopped(FrameInterface frame, FrameState state,
             int exitStatus, long maxRss) {
 
 
@@ -116,7 +116,7 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
                 frame.getFrameId(), FrameState.RUNNING.toString(),
                 frame.getVersion()) == 1;
     }
-    
+
     private static final String UPDATE_FRAME_REASON =
         "UPDATE "+
             "frame "+

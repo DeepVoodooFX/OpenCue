@@ -1,24 +1,20 @@
 ALTER TABLE layer 
 ADD COLUMN str_kill_signal VARCHAR(10) DEFAULT 'SIGKILL';
 
--- Add int_terminating_count to relevant tables
 ALTER TABLE job_stat ADD COLUMN int_terminating_count BIGINT DEFAULT 0 NOT NULL;
 ALTER TABLE layer_stat ADD COLUMN int_terminating_count BIGINT DEFAULT 0 NOT NULL;
 ALTER TABLE job_history ADD COLUMN int_terminating_count BIGINT DEFAULT 0 NOT NULL;
 ALTER TABLE layer_history ADD COLUMN int_terminating_count BIGINT DEFAULT 0 NOT NULL;
 
--- Add indexes for improved query performance
 CREATE INDEX idx_job_stat_terminating ON job_stat (int_terminating_count);
 CREATE INDEX idx_layer_stat_terminating ON layer_stat (int_terminating_count);
 CREATE INDEX idx_job_history_terminating ON job_history (int_terminating_count);
 CREATE INDEX idx_layer_history_terminating ON layer_history (int_terminating_count);
 CREATE INDEX idx_frame_terminating ON frame (pk_job, pk_layer) WHERE str_state = 'TERMINATING';
 
--- Alter existing types to add int_terminating_count
 ALTER TYPE JobStatType ADD ATTRIBUTE int_terminating_count BIGINT;
 ALTER TYPE LayerStatType ADD ATTRIBUTE int_terminating_count BIGINT;
 
--- Update views (same as before)
 DROP VIEW v_history_job;
 CREATE VIEW v_history_job (pk_job, str_name, str_shot, str_user, int_core_time_success, int_core_time_fail, int_gpu_time_success, int_gpu_time_fail, int_frame_count, int_layer_count, int_waiting_count, int_dead_count, int_depend_count, int_eaten_count, int_terminating_count, int_succeeded_count, int_running_count, int_max_rss, int_gpu_mem_max, b_archived, str_facility_name, str_dept_name, int_ts_started, int_ts_stopped, str_show_name, dt_last_modified) AS
   select

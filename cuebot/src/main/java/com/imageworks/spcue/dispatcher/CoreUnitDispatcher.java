@@ -322,6 +322,7 @@ public class CoreUnitDispatcher implements Dispatcher {
 
     public void dispatchProcToJob(VirtualProc proc, JobInterface job)
     {
+        
         // Do not throttle this method
         for (DispatchFrame frame:
             dispatchSupport.findNextDispatchFrames(job, proc,

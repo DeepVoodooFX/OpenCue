@@ -59,7 +59,6 @@ public class JobManagerSupport {
     private static final Logger logger = LogManager.getLogger(JobManagerSupport.class);
 
     private JobManager jobManager;
-    
     private DependManager dependManager;
     private HostManager hostManager;
     private RqdClient rqdClient;
@@ -110,16 +109,11 @@ public class JobManagerSupport {
 
     private void handleManualKill(JobInterface job, Source source) {
 
-        System.out.println("14 JobManagerSupport: shutdownJob: " + job.getName() + "/" + job.getId() +
-                " is being manually killed by " + source.toString());
-
-        logger.info(job.getName() + "/" + job.getId() +
-                " is being manually killed by " + source.toString());
-
         /**
          * Sleep a bit here in case any frames were
          * dispatched during the job shutdown process.
          */
+
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e1) {
@@ -135,12 +129,7 @@ public class JobManagerSupport {
                 .build();
         search.setCriteria(newCriteria.toBuilder().setStates(states).build());
         
-        System.out.println("15 JobManagerSupport starting search to findFrames: " + search.toString());
-
         for (FrameInterface frame: jobManager.findFrames(search)) {
-
-            System.out.println("16 JobManagerSupport: shutdownJob: found frame: " + frame.getName() + "/" + frame.getId());
-
             VirtualProc proc = null;
             try {
                 proc = hostManager.findVirtualProc(frame);
@@ -151,7 +140,6 @@ public class JobManagerSupport {
             }
 
             if (manualStopFrame(frame, FrameState.TERMINATING)) {
-                System.out.println("17 JobManagerSupport: shutdownJob: stopping frame: " + frame.getName() + "/" + frame.getId());
                 try {
                     if (proc != null) {
                         kill(proc, source);
@@ -261,7 +249,6 @@ public class JobManagerSupport {
      */
     public void kill(VirtualProc p, Source source) {
         try {
-            System.out.println("18 JobManagerSupport: kill: killing proc sending rqd: " + p.getName() + "/" + p.getId() + " by " + source.toString());
             rqdClient.killFrame(p, source.toString());
         }
         catch (java.lang.Throwable e) {
@@ -281,7 +268,6 @@ public class JobManagerSupport {
     public void kill(Collection<VirtualProc> procs, Source source) {
         for (VirtualProc p: procs) {
             try {
-                System.out.println("16 JobManagerSupport: kill: killing proc sending rqd: " + p.getName() + "/" + p.getId() + " by " + source.toString());
                 rqdClient.killFrame(p, source.toString());
             }
             catch (java.lang.Throwable e) {

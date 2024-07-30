@@ -24,7 +24,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.pqc.crypto.rainbow.Layer;
 import org.apache.logging.log4j.LogManager;
 
 import com.google.common.cache.CacheBuilder;

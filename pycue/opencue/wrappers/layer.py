@@ -201,14 +201,6 @@ class Layer(object):
         return self.stub.SetTimeoutLLU(job_pb2.LayerSetTimeoutLLURequest(
             layer=self.data, timeout_llu=timeout_llu),
             timeout=Cuebot.Timeout)
-    
-    def setKillSignal(self, kill_signal):
-        """Set the kill signal for the layer.
-        :type kill_signal: str
-        :param kill_signal: kill signal"""
-        return self.stub.SetKillSignal(job_pb2.LayerSetKillSignalRequest(
-            layer=self.data, kill_signal=kill_signal),
-            timeout=Cuebot.Timeout)
 
     def addRenderPartition(self, hostname, threads, max_cores, num_mem, max_gpu):
         """Adds a render partition to the layer.

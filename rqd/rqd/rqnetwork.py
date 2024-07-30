@@ -147,7 +147,6 @@ class RunningFrame(object):
 
     def kill(self, message=""):
         """Kills the frame"""
-        print("Request received: kill (using %s)", self.killSignal)
         log.info("Request received: kill (using %s)", self.killSignal)
         if self.frameAttendantThread is None:
             log.warning(
@@ -169,14 +168,9 @@ class RunningFrame(object):
                         subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
                     else:
                         log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)
-                        print("Killing frameId=%s pid=%s with signal %s" % (self.frameId, self.pid, self.killSignal))
-                        # kill command process pid instead of time pid
-                        # os.kill(command.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
                         os.kill(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
 
                     self.kill_timeout_start = time.time()
-
-                    # if kill_timeout is set, set kill state to pending
                 finally:
                     log.warning(
                         "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)

@@ -204,6 +204,11 @@ class JobBookingBarDelegate(AbstractDelegate):
                         painter.fillRect(
                             rect.adjusted(0, 0, -int(ceil(ratio * jobWaiting)), 0),
                             RGB_FRAME_STATE[opencue.api.job_pb2.RUNNING])
+                        
+                    if jobTerminating:
+                        painter.fillRect(
+                            rect.adjusted(0, 0, -int(ceil(ratio * jobTerminating)), 0),
+                            RGB_FRAME_STATE[opencue.api.job_pb2.TERMINATING])
 
                     painter.setPen(cuegui.Style.ColorTheme.PAUSE_ICON_COLOUR)
                     x = min(rect.x() + ratio * jobMin, option.rect.right() - 9)

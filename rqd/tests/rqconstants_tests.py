@@ -63,7 +63,7 @@ class MockConfig(object):
 
     def __enter__(self):
         self.patcher.start()
-        importlib.reload(rqd.rqconstants)
+        reload(rqd.rqconstants)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
