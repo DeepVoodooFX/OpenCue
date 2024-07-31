@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,6 +68,10 @@ import com.imageworks.spcue.util.CueUtil;
 import com.imageworks.spcue.util.FrameSet;
 import com.imageworks.spcue.util.JobLogUtil;
 import com.imageworks.spcue.util.Convert;
+import com.imageworks.spcue.rqd.RqdClient;
+import com.imageworks.spcue.Source;
+import com.imageworks.spcue.service.HostManager;
+import com.imageworks.spcue.VirtualProc;
 
 @Transactional
 public class JobManagerService implements JobManager {
@@ -83,6 +88,8 @@ public class JobManagerService implements JobManager {
     private FilterManager filterManager;
     private GroupDao groupDao;
     private FacilityDao facilityDao;
+    private RqdClient rqdClient;
+    private HostManager hostManager;
     private JobLogUtil jobLogUtil;
 
     @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
@@ -343,6 +350,23 @@ public class JobManagerService implements JobManager {
     
         if (!allFramesTerminated) {
             logger.warn("Not all frames terminated for job: " + job.getName() + " after " + maxAttempts + " attempts.");
+            List<FrameInterface> terminatingFrames = jobDao.findTerminatingFrames(job);
+
+            for (FrameInterface frame: terminatingFrames) {
+                VirtualProc proc = null;
+                try {
+                    proc = hostManager.findVirtualProc(frame);
+                    rqdClient.killFrame(proc, "Frame termination took too long, force terminating frame");
+                } catch (Exception e) {
+                    logger.info("failed to obtain information for " +
+                            "proc running on frame: " + frame);
+                }
+                frameDao.updateFrameState(frame, FrameState.DEAD);
+            }
+
+            if(shutdownJob(job)) {
+                logger.info("Job " + job.getName() + " has been shutdown");
+            }
         }
     
         return allFramesTerminated;

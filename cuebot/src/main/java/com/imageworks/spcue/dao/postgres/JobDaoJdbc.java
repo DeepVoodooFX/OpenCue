@@ -52,7 +52,10 @@ import com.imageworks.spcue.JobInterface;
 import com.imageworks.spcue.ResourceUsage;
 import com.imageworks.spcue.ShowInterface;
 import com.imageworks.spcue.TaskEntity;
+import com.imageworks.spcue.FrameEntity;
+import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.dao.JobDao;
+import com.imageworks.spcue.dao.postgres.FrameDaoJdbc;
 import com.imageworks.spcue.grpc.job.FrameState;
 import com.imageworks.spcue.grpc.job.JobState;
 import com.imageworks.spcue.util.CueUtil;
@@ -627,6 +630,57 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
     public boolean hasTerminatingFrames(JobInterface job) {
         return getJdbcTemplate().queryForObject(HAS_TERMINATING_FRAMES,
         Integer.class, job.getJobId()) > 0;
+    }
+
+    private static final String FIND_TERMINATING_FRAMES =
+        "SELECT " +
+            "frame.pk_frame, " +
+            "frame.pk_layer, " +
+            "frame.str_name, " +
+            "frame.pk_job, " +
+            "frame.int_version " +
+        "FROM " +
+            "frame " +
+        "WHERE " +
+            "frame.pk_job = ? " +
+        "AND " +
+            "frame.str_state = ?";
+
+    private static final RowMapper<FrameInterface> FRAME_MAPPER = new RowMapper<FrameInterface>() {
+        @Override
+        public FrameEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
+            FrameEntity frame = new FrameEntity();
+            frame.id = rs.getString("pk_frame");
+            frame.name = rs.getString("str_name");
+            frame.jobId = rs.getString("pk_job");
+            frame.layerId = rs.getString("pk_layer");
+            frame.version = rs.getInt("int_version");
+            
+            System.out.println("Mapped frame: id=" + frame.id + ", name=" + frame.name);
+            
+            return frame;
+        }
+    };
+
+    @Override
+    public List<FrameInterface> findTerminatingFrames(JobInterface job) {
+        System.out.println("Finding terminating frames for job ID: " + job.getJobId());
+        
+        try {
+            List<FrameInterface> results = getJdbcTemplate().query(
+                FIND_TERMINATING_FRAMES,
+                FRAME_MAPPER,
+                job.getJobId(),
+                FrameState.TERMINATING.toString()
+            );
+            
+            System.out.println("Found " + results.size() + " terminating frames");
+            return results;
+        } catch (DataAccessException e) {
+            System.err.println("Error finding terminating frames for job " + job.getJobId() + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // or handle the error as appropriate for your application
+        }
     }
 
     private static final String IS_JOB_OVER_MIN_CORES =

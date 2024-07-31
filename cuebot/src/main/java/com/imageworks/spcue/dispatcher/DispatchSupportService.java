@@ -330,12 +330,11 @@ public class DispatchSupportService implements DispatchSupport {
         logger.trace("stopping frame: " + frame);
         if (frameDao.updateFrameStopped(frame, state,
                 exitStatus, maxRss)) {
-                    System.out.println("frame stopped");
             // Update max rss up the chain.
             layerDao.updateLayerMaxRSS(frame, maxRss, false);
             jobDao.updateMaxRSS(frame, maxRss);
+            
             procDao.clearVirtualProcAssignment(frame);
-
             return true;
         }
 

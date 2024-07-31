@@ -33,6 +33,7 @@ import com.imageworks.spcue.GroupInterface;
 import com.imageworks.spcue.Inherit;
 import com.imageworks.spcue.JobDetail;
 import com.imageworks.spcue.JobInterface;
+import com.imageworks.spcue.FrameInterface;
 import com.imageworks.spcue.ResourceUsage;
 import com.imageworks.spcue.ShowInterface;
 import com.imageworks.spcue.TaskEntity;
@@ -254,6 +255,14 @@ public interface JobDao {
      * @return
      */
     boolean hasTerminatingFrames(JobInterface job);
+
+    /**
+     * returns a list of all the jobs frames
+     *
+     * @param job
+     * @return
+     */
+    List<FrameInterface> findTerminatingFrames(JobInterface job);
 
     /**
      * returns true if job is over max procs
