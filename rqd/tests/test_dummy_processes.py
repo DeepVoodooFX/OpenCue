@@ -86,6 +86,8 @@ def monitor_job(job, wait_time):
     logger.info(f"Job ID: {job.id()}")
     
     start_time = time.time()
+    kill_attempts = 0
+    max_kill_attempts = 3
 
     while True:
         try:
@@ -102,14 +104,17 @@ def monitor_job(job, wait_time):
                 return job
             
             elapsed_time = time.time() - start_time
-            if elapsed_time > wait_time:
-                logger.info(f"Job {job.name()} has exceeded its runtime. Initiating shutdown.")
+            if elapsed_time > wait_time or kill_attempts > 0:
+                if kill_attempts == 0:
+                    logger.info(f"Job {job.name()} has exceeded its runtime. Initiating shutdown.")
+                
                 try:
                     job.kill()
-                    logger.info(f"Kill request sent to job {job.name()}")
+                    kill_attempts += 1
+                    logger.info(f"Kill request sent to job {job.name()} (Attempt {kill_attempts})")
                     
                     # Wait for the job to be killed
-                    for _ in range(1024):
+                    for _ in range(60):  # Wait for up to 1 minute
                         time.sleep(1)
                         job = opencue.api.getJob(job.id())
                         state = job.state()
@@ -123,8 +128,8 @@ def monitor_job(job, wait_time):
                                 running_frames = True
                                 break  # Exit the inner loop
                         
-                        if running_frames:
-                            continue  # Go to the next iteration of the outer loop
+                        if not running_frames:
+                            break  # Exit the waiting loop if no frames are running
 
                         logger.info(f"Job State after kill request: {state}")
 
@@ -134,6 +139,13 @@ def monitor_job(job, wait_time):
                         elif state == opencue.api.job_pb2.DEAD:
                             logger.info("Job was successfully killed")
                             return job
+
+                    if running_frames and kill_attempts < max_kill_attempts:
+                        logger.warning(f"Job {job.name()} still has running frames after kill attempt. Will retry.")
+                        continue  # Go to the next iteration of the main loop to try killing again
+                    elif kill_attempts >= max_kill_attempts:
+                        logger.error(f"Failed to kill job {job.name()} after {max_kill_attempts} attempts. Exiting monitor.")
+                        return job
                 except Exception as e:
                     logger.error(f"Failed to kill job {job.name()}: {e}")
                 break

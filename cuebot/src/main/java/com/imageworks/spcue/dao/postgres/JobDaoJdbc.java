@@ -656,8 +656,6 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
             frame.layerId = rs.getString("pk_layer");
             frame.version = rs.getInt("int_version");
             
-            System.out.println("Mapped frame: id=" + frame.id + ", name=" + frame.name);
-            
             return frame;
         }
     };

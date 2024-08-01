@@ -592,8 +592,6 @@ public class FrameCompleteHandler {
         if (EnumSet.of(FrameState.WAITING, FrameState.EATEN).contains(
                 frame.state)) {
             return frame.state;
-        } else if (frame.state.equals(FrameState.TERMINATING)) {
-            return FrameState.DEAD;
         }
         // Checks for frames that have reached max retries.
         else if (frame.state.equals(FrameState.DEAD)) {
