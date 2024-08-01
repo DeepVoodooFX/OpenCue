@@ -343,7 +343,7 @@ public class JobManagerService implements JobManager {
     
         if (!allFramesTerminated) {
             logger.warn("Not all frames terminated for job: " + job.getName() + " after " + maxAttempts + " attempts.");
-            jobDao.updateJobState(job, JobState.FAILED);
+            updateJobState(job, JobState.FAILED);
         }
     
         return allFramesTerminated;
