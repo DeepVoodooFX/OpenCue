@@ -132,6 +132,7 @@ public class FrameCompleteHandler {
      * @param report
      */
     public void handleFrameCompleteReport(final FrameCompleteReport report) {
+
         /*
          * A boolean we're going to set to true if we can detect
          * a corrupted data block in Oracle.

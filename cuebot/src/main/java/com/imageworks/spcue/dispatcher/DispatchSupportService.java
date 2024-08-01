@@ -333,7 +333,7 @@ public class DispatchSupportService implements DispatchSupport {
             // Update max rss up the chain.
             layerDao.updateLayerMaxRSS(frame, maxRss, false);
             jobDao.updateMaxRSS(frame, maxRss);
-            
+
             procDao.clearVirtualProcAssignment(frame);
             return true;
         }
