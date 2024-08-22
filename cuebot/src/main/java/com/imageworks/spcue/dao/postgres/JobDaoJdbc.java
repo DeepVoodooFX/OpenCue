@@ -613,7 +613,7 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
 
     private static final String HAS_TERMINATING_FRAMES =
         "SELECT " +
-            "int_terminating_count " +
+            "(int_terminating_count + int_running_count) " +
         "FROM " +
             "job,"+
             "job_stat " +
