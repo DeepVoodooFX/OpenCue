@@ -457,7 +457,7 @@ public class JobSpec {
             }
 
             String killSignal = layerTag.getChildTextTrim("kill_signal");
-            layer.killSignal = (killSignal != null && !killSignal.isEmpty()) ? killSignal : "SIGKILL";
+            layer.killSignal = (killSignal != null && !killSignal.isEmpty() && killSignal.startsWith("SIG")) ? killSignal : "SIGKILL";
 
             /*
              * Handle the layer environment
