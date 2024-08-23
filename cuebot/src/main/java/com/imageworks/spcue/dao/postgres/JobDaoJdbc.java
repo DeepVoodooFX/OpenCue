@@ -622,8 +622,6 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
         "AND " +
             "job.str_state = 'PENDING' " +
         "AND " +
-            "job.b_paused = false " +
-        "AND " +
             "job.pk_job = ?";
 
     @Override
