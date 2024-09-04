@@ -305,6 +305,16 @@ class FrameAttendantThread(threading.Thread):
                 pass
         
         rqd.rqutil.permissionsLow()
+
+        if(len(matching_pids) == 0):
+            # If we can't find the process, log a warning that we failed to find it
+            # This probably means the process never started or has exited
+            # Handle this case by returning the top process as the command process
+            log.warning(f"Failed to find child process for command {command}")
+            self.commandProcess = psutil.Process(top_pid)
+            self.commandProcess.is_not_top_process = False
+            self.frameInfo.pid = top_pid
+            return
             
         # Get all descendant processes of the top-level PID
         all_descendant_processes = self.__get_all_children(top_pid)
@@ -430,7 +440,7 @@ class FrameAttendantThread(threading.Thread):
             self.__find_process_by_command(frameInfo.forkedCommand.pid, runFrame.command)
             time.sleep(0.1)
 
-        if self.commandProcess is not None:
+        if self.commandProcess is not None and self.commandProcess.is_not_top_process:
             self.__wait_for_command_process_to_exit()
 
         returncode = frameInfo.forkedCommand.wait()
