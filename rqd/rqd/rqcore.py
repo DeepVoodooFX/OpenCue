@@ -312,7 +312,7 @@ class FrameAttendantThread(threading.Thread):
             # Handle this case by returning the top process as the command process
             log.warning(f"Failed to find child process for command {command}")
             self.commandProcess = psutil.Process(top_pid)
-            self.commandProcess.is_not_top_process = False
+            self.commandProcess.is_top_process = True
             self.frameInfo.pid = top_pid
             return
             
@@ -329,6 +329,7 @@ class FrameAttendantThread(threading.Thread):
                 try:
                     self.commandProcess = psutil.Process(pid)
                     self.frameInfo.pid = pid
+                    self.commandProcess.is_top_process = False
                 except psutil.NoSuchProcess:
                     log.warning(f"Process {pid} no longer exists")
                     continue
@@ -440,7 +441,7 @@ class FrameAttendantThread(threading.Thread):
             self.__find_process_by_command(frameInfo.forkedCommand.pid, runFrame.command)
             time.sleep(0.1)
 
-        if self.commandProcess is not None and self.commandProcess.is_not_top_process:
+        if self.commandProcess is not None and self.commandProcess.is_top_process:
             self.__wait_for_command_process_to_exit()
 
         returncode = frameInfo.forkedCommand.wait()
