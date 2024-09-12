@@ -306,13 +306,11 @@ class FrameAttendantThread(threading.Thread):
         
         rqd.rqutil.permissionsLow()
 
-        if(len(matching_pids) == 0):
-            # If we can't find the process, log a warning that we failed to find it
-            # This probably means the process never started or has exited
-            # Handle this case by returning the top process as the command process
+        if len(matching_pids) == 0:
             log.warning(f"Failed to find child process for command {command}")
+            log.info(f"Using top process (PID: {top_pid}) as command process")
             self.commandProcess = psutil.Process(top_pid)
-            self.commandProcess.is_not_top_process = False
+            self.commandProcess.is_child_process = False
             self.frameInfo.pid = top_pid
             return
             
@@ -329,7 +327,8 @@ class FrameAttendantThread(threading.Thread):
                 try:
                     self.commandProcess = psutil.Process(pid)
                     self.frameInfo.pid = pid
-                    self.commandProcess.is_not_top_process = True
+                    self.commandProcess.is_child_process = True
+                    break
                 except psutil.NoSuchProcess:
                     log.warning(f"Process {pid} no longer exists")
                     continue
@@ -344,43 +343,51 @@ class FrameAttendantThread(threading.Thread):
 
     def __wait_for_command_process_to_exit(self):
         """Wait for the command process to exit, or kill it if it takes too long"""
+        log.info("Starting process termination procedure")
         wait_start = time.time()
+        log.info("Initializing wait_start time")
+        
+        log.info("Waiting for command process to be identified")
         while self.commandProcess is None:
+            log.info("Checking if command process is identified")
             if time.time() - wait_start > 30:
-                log.error(f"Timeout waiting for command process to be identified for frameId={self.frameId}")
+                log.error(f"Timeout reached waiting for command process identification for frameId={self.frameId}")
                 return None
             time.sleep(0.1)
+        
+        log.info(f"Command process identified with PID: {self.commandProcess.pid}")
 
+        log.info("Entering main termination loop")
         while True:
             try:
-                # Wait for the process to terminate or for a short timeout
-                exited = self.commandProcess.wait(timeout=1)
-
-                if exited is None:
-                    # Process is dead
-                    return True
-
-
+                log.info("Attempting to wait for process to terminate naturally")
+                # Wait for the process to terminate
+                # After wait, get the exit code
+                exit_code = self.commandProcess.wait(timeout=60)
+                log.info(f"Process terminated with exit code: {exit_code}")
+                return exit_code
             except psutil.TimeoutExpired:
-                # Process is still running
-                if self.frameInfo.is_kill_in_progress():
-                    if time.time() >= (self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION):
-                            try:
-                                rqd.rqutil.permissionsUser(self.runFrame.uid, self.runFrame.gid)
-                                self.commandProcess.send_signal(signal.SIGKILL)
-                                rqd.rqutil.permissionsLow()
-                            except psutil.TimeoutExpired:
-                                log.error(f"Failed to kill process {self.commandProcess.pid} with SIGKILL")
-                            except psutil.NoSuchProcess:
-                                pass  # Process already terminated
-
-                            exit_code = self.commandProcess.wait(timeout=1)
-                            return exit_code
-
-            except psutil.NoSuchProcess:
-                log.info(f"Process no longer exists for frameId={self.frameId}")
-                return 1
-
+                log.info("Process did not terminate within timeout, checking if kill is in progress")
+                if self.frameInfo.is_kill_in_progress() and time.time() >= self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION:
+                    log.info("Kill in progress, checking if kill timeout has been reached")
+                    try:
+                        log.info("Kill timeout reached, preparing to send SIGKILL")
+                        log.info("Elevating permissions to send SIGKILL")
+                        rqd.rqutil.permissionsUser(self.runFrame.uid, self.runFrame.gid)
+                        log.info(f"Sending SIGKILL to process {self.commandProcess.pid}")
+                        self.commandProcess.send_signal(signal.SIGKILL)
+                        log.info("Lowering permissions after sending SIGKILL")
+                        rqd.rqutil.permissionsLow()
+                        log.info("Waiting for process to terminate after SIGKILL")
+                        exit_code = self.commandProcess.wait(timeout=1)
+                        log.info(f"Process terminated after SIGKILL with exit code: {exit_code}")
+                        return exit_code
+                    except psutil.TimeoutExpired:
+                        log.error(f"Failed to kill process {self.commandProcess.pid} with SIGKILL")
+                    except psutil.NoSuchProcess:
+                        log.info("Process no longer exists")
+                        return None
+                
     def runLinux(self):
         """The steps required to handle a frame under linux"""
         frameInfo = self.frameInfo
@@ -441,19 +448,23 @@ class FrameAttendantThread(threading.Thread):
             self.__find_process_by_command(frameInfo.forkedCommand.pid, runFrame.command)
             time.sleep(0.1)
 
-        if self.commandProcess is not None and self.commandProcess.is_not_top_process:
+        log.info("Checking if terminated process was a child process")
+        if self.commandProcess is not None and self.commandProcess.is_child_process:
             self.__wait_for_command_process_to_exit()
 
+        log.info(f"Parent process (PID: {frameInfo.forkedCommand.pid}) waiting for termination")
         returncode = frameInfo.forkedCommand.wait()
-
-        # Find exitStatus and exitSignal
-        if returncode < 0:
-            # Exited with a signal
+        log.info(f"Parent process terminated with return code: {returncode}")
+    
+        if -returncode < 0:
             frameInfo.exitStatus = 1
-            frameInfo.exitSignal = -returncode
+            frameInfo.exitSignal = returncode
         else:
             frameInfo.exitStatus = returncode
             frameInfo.exitSignal = 0
+        
+        log.info(f"Recording exit status: {frameInfo.exitStatus} and exit signal: {frameInfo.exitSignal}")
+        log.info("Process termination procedure completed")
 
         try:
             statFile  = open(tempStatFile,"r")
