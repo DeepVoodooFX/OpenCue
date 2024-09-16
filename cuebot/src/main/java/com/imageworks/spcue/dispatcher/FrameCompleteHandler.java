@@ -155,6 +155,7 @@ public class FrameCompleteHandler {
 
             if (dispatchSupport.stopFrame(frame, newFrameState, report.getExitStatus(),
                     report.getFrame().getMaxRss())) {
+                logger.info("stopped running frame: " + frame.state + " -> " + newFrameState);
                 if (dispatcher.isTestMode()) {
                     // Database modifications on a threadpool cannot be captured by the test thread
                     handlePostFrameCompleteOperations(proc, report, job, frame,
@@ -175,6 +176,11 @@ public class FrameCompleteHandler {
                 }
             }
             else {
+                if (dispatchSupport.terminateFrame(frame, FrameState.WAITING, report.getExitStatus(),
+                    report.getFrame().getMaxRss())) {
+
+                    logger.info("stopped terminating frame: " + frame.state + " -> " + newFrameState);
+                }
                 /*
                  * First check if we have a redirect.  When a user
                  * retries a frame the proc is redirected back

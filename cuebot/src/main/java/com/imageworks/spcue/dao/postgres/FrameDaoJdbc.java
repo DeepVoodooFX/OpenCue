@@ -102,7 +102,7 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
         "WHERE " +
             "frame.pk_frame = ? " +
         "AND " +
-            "(frame.str_state = ? OR frame.str_state = ?) " +
+            "frame.str_state = ? " +
          "AND " +
             "frame.int_version = ? ";
 
@@ -114,7 +114,37 @@ public class FrameDaoJdbc extends JdbcDaoSupport  implements FrameDao {
        return getJdbcTemplate().update(UPDATE_FRAME_STOPPED,
                 state.toString(), exitStatus, maxRss,
                 frame.getFrameId(), FrameState.RUNNING.toString(),
-                FrameState.TERMINATING.toString(),
+                frame.getVersion()) == 1;
+    }
+
+    private static final String UPDATE_FRAME_TERMINATED =
+        "UPDATE "+
+            "frame "+
+        "SET " +
+            "str_state=?, "+
+            "int_exit_status = ?, " +
+            "ts_stopped = current_timestamp + interval '1' second, " +
+            "ts_updated = current_timestamp, " +
+            "int_mem_max_used = ?, " +
+            "int_version = int_version + 1, " +
+            "int_total_past_core_time = int_total_past_core_time + " +
+                "round(INTERVAL_TO_SECONDS(current_timestamp + interval '1' second - ts_started) * int_cores / 100), " +
+            "int_total_past_gpu_time = int_total_past_gpu_time + " +
+                "round(INTERVAL_TO_SECONDS(current_timestamp + interval '1' second - ts_started) * int_gpus) " +
+        "WHERE " +
+            "frame.pk_frame = ? " +
+        "AND " +
+            "frame.str_state = ? " +
+        "AND " +
+            "frame.int_version = ? ";
+
+    @Override
+    public boolean updateFrameTerminated(FrameInterface frame, FrameState state,
+            int exitStatus, long maxRss) {
+
+        return getJdbcTemplate().update(UPDATE_FRAME_TERMINATED,
+                state.toString(), exitStatus, maxRss,
+                frame.getFrameId(), FrameState.TERMINATING.toString(),
                 frame.getVersion()) == 1;
     }
 

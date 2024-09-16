@@ -180,6 +180,19 @@ public interface DispatchSupport {
                       int exitStatus, long maxrss);
 
     /**
+     * Terminates a terminating frame and sets a new frame
+     * state and exit status.
+     * 
+     * @param frame
+     * @param state
+     * @param exitStatus
+     * @param maxrss
+     * @return
+     */
+    boolean terminateFrame(FrameInterface frame, FrameState state,
+                           int exitStatus, long maxrss);
+
+    /**
      * Reserve the resources in the specified proc for the
      * specified frame.  If the proc does not exist, its
      * inserted, otherwise its updated.
