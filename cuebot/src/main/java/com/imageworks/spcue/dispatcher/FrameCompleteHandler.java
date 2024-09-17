@@ -180,6 +180,10 @@ public class FrameCompleteHandler {
                     report.getFrame().getMaxRss())) {
 
                     logger.info("stopped terminating frame: " + frame.state + " -> " + newFrameState);
+
+                    if (job.state.equals(JobState.SHUTDOWN) && !jobManager.hasTerminatingFrames(job)) {
+                        jobManagerSupport.queueShutdownJob(job, new Source("natural"), false);
+                    }
                 }
                 /*
                  * First check if we have a redirect.  When a user

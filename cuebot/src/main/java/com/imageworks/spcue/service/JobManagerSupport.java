@@ -85,23 +85,30 @@ public class JobManagerSupport {
         }
 
         if (isManualKill) {
+
+            jobManager.updateJobState(job, JobState.SHUTDOWN);
+
             handleManualKill(job, source);
-        }
 
-        // Wait for all frames to terminate
-        boolean allFramesTerminated = jobManager.waitForFramesToTerminate(job);
-
-        if (allFramesTerminated) {
-            boolean jobFinished = jobManager.shutdownJob(job);
-            if(jobFinished) {
-                logger.info("Job finished: " + job.getName());
-
+            if (jobManager.hasTerminatingFrames(job)) {
                 /*
-                * Send mail after all frames have been stopped and job is finished
-                */
-                emailSupport.sendShutdownEmail(job);
+                 * FrameCompletionHandler will determine when the last
+                 * terminating frame is completed and it will dispatch
+                 * this method again, but 
+                 */
                 return true;
             }
+        }
+
+        boolean jobFinished = jobManager.shutdownJob(job);
+        if (jobFinished) {
+            logger.info("Job finished: " + job.getName());
+
+            /*
+            * Send mail after all frames have been stopped and job is finished
+            */
+            emailSupport.sendShutdownEmail(job);
+            return true;
         }
 
         return false;

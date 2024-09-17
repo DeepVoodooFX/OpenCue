@@ -441,7 +441,7 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
             "str_visible_name = NULL, " +
             "ts_stopped = current_timestamp "+
         "WHERE " +
-            "str_state = 'PENDING' " +
+            "(str_state = 'PENDING' OR str_state = 'SHUTDOWN') " +
         "AND " +
             "pk_job = ?";
 
@@ -501,7 +501,7 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
         "WHERE " +
             "str_name = ? " +
         "AND " +
-            "str_state='PENDING' " +
+            "(str_state='PENDING' OR str_state='SHUTDOWN')" +
         "LIMIT 1";
 
     @Override
@@ -613,14 +613,14 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
 
     private static final String HAS_TERMINATING_FRAMES =
         "SELECT " +
-            "(int_terminating_count + int_running_count) " +
+            "int_terminating_count " +
         "FROM " +
             "job,"+
             "job_stat " +
         "WHERE " +
             "job.pk_job = job_stat.pk_job " +
         "AND " +
-            "job.str_state = 'PENDING' " +
+            "(job.str_state = 'PENDING' OR job.str_state = 'SHUTDOWN') " +
         "AND " +
             "job.pk_job = ?";
 

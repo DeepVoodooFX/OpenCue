@@ -1536,7 +1536,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
         "WHERE " +
             "job.pk_show = show.pk_show " +
         "AND " +
-            "job.str_state = 'PENDING' ";
+            "(job.str_state = 'PENDING' OR job.str_state = 'SHUTDOWN')";
 
     private static final String GET_HOST_COMMENTS =
         "SELECT " +
@@ -2237,7 +2237,7 @@ public class WhiteboardDaoJdbc extends JdbcDaoSupport implements WhiteboardDao {
     private static final String GET_PENDING_JOBS =
         GET_JOB +
         "AND " +
-            "job.str_state = 'PENDING' ";
+            "(job.str_state = 'PENDING' OR job.str_state = 'SHUTDOWN')";
 
     private static final String GET_FRAMES_CRITERIA =
 

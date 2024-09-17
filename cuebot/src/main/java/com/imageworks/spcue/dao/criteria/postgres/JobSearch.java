@@ -17,6 +17,7 @@
 
 package com.imageworks.spcue.dao.criteria.postgres;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import com.imageworks.spcue.ShowInterface;
@@ -55,7 +56,7 @@ public final class JobSearch extends Criteria implements JobSearchInterface {
         addPhrase("show.str_name", criteria.getShowsList());
         addPhrase("job.str_user", criteria.getUsersList());
         if (!criteria.getIncludeFinished()) {
-            addPhrase("job.str_state", "PENDING");
+            addPhrase("job.str_state", Arrays.asList( "PENDING", "SHUTDOWN"));
         }
     }
 }

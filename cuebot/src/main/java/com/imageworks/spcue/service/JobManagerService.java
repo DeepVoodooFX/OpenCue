@@ -690,5 +690,9 @@ public class JobManagerService implements JobManager {
     public void setJobLogUtil(JobLogUtil jobLogUtil) {
         this.jobLogUtil = jobLogUtil;
     }
+
+    public boolean hasTerminatingFrames(JobInterface job) {
+        return jobDao.hasTerminatingFrames(job);
+    }
 }
 
