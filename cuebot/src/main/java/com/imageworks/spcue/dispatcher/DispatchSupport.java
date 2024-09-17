@@ -156,6 +156,19 @@ public interface DispatchSupport {
     boolean stopFrame(FrameInterface frame, FrameState state, int exitStatus);
 
     /**
+     * Terminates a terminating frame and sets a new frame
+     * state and exit status.
+     * 
+     * @param frame
+     * @param state
+     * @param exitStatus
+     * @param maxrss
+     * @return
+     */
+    boolean terminateFrame(FrameInterface frame, FrameState state,
+                           int exitStatus, long maxrss);
+
+    /**
      * Updates the frame to the Running state.  This should
      * be done after RQD has accepted the frame.  Setting
      * the frame's state to running will result in a

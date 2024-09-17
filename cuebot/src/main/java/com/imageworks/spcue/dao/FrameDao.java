@@ -196,6 +196,18 @@ public interface FrameDao {
                                long maxRss);
 
     /**
+     * Updates a frame to the terminated state.  The frame MUST be
+     * in the Terminating state to be terminated.
+     * @param frame
+     * @param state
+     * @param exitStatus
+     * @param maxRss
+     * @return
+     */
+    boolean updateFrameTerminated(FrameInterface frame, FrameState state,
+                               int exitStatus, long maxRss);
+
+    /**
      * Sets a frame to an unreserved waiting state.
      *
      * @param frame

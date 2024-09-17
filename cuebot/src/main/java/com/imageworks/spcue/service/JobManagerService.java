@@ -338,7 +338,7 @@ public class JobManagerService implements JobManager {
             if (!allFramesTerminated) {
                 logger.info("Waiting for frames to terminate for job: " + job.getName() + ". Attempt: " + (attempts + 1));
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     logger.error("Interrupted while waiting for frames to terminate", e);
                     Thread.currentThread().interrupt();

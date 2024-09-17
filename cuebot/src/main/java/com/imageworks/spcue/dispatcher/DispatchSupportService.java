@@ -343,6 +343,21 @@ public class DispatchSupportService implements DispatchSupport {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
+    public boolean terminateFrame(FrameInterface frame, FrameState state,
+                                  int exitStatus, long maxRss) {
+        logger.trace("terminating frame: " + frame);
+        if (frameDao.updateFrameTerminated(frame, state,
+                exitStatus, maxRss)) {
+            layerDao.updateLayerMaxRSS(frame, maxRss, false);
+            procDao.clearVirtualProcAssignment(frame);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
     public void clearFrame(DispatchFrame frame) {
         logger.trace("clearing frame: " + frame);
         frameDao.updateFrameCleared(frame);

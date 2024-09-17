@@ -52,6 +52,7 @@ import com.imageworks.spcue.service.HostManager;
 import com.imageworks.spcue.service.JmsMover;
 import com.imageworks.spcue.service.JobManager;
 import com.imageworks.spcue.service.JobManagerSupport;
+import com.imageworks.spcue.service.EmailSupport;
 import com.imageworks.spcue.util.CueExceptionUtil;
 import com.imageworks.spcue.util.CueUtil;
 
@@ -81,6 +82,7 @@ public class FrameCompleteHandler {
     private Dispatcher localDispatcher;
     private JobManagerSupport jobManagerSupport;
     private DispatchSupport dispatchSupport;
+    private EmailSupport emailSupport;
     private JmsMover jsmMover;
 
     private WhiteboardDao whiteboardDao;
@@ -155,6 +157,7 @@ public class FrameCompleteHandler {
 
             if (dispatchSupport.stopFrame(frame, newFrameState, report.getExitStatus(),
                     report.getFrame().getMaxRss())) {
+                logger.info("stopped running frame: " + frame.state + " -> " + newFrameState);
                 if (dispatcher.isTestMode()) {
                     // Database modifications on a threadpool cannot be captured by the test thread
                     handlePostFrameCompleteOperations(proc, report, job, frame,
@@ -181,6 +184,11 @@ public class FrameCompleteHandler {
                  * to the same job without checking any other
                  * properties.
                  */
+                if (dispatchSupport.terminateFrame(frame, FrameState.WAITING, report.getExitStatus(),
+                    report.getFrame().getMaxRss())) {
+
+                    logger.info("stopped terminating frame: " + frame.state + " -> " + newFrameState);
+                }
                 if (redirectManager.hasRedirect(proc)) {
                     dispatchQueue.execute(new KeyRunnable(key) {
                         @Override
@@ -208,6 +216,33 @@ public class FrameCompleteHandler {
                     });
                 }
             }
+
+            // Wait for all frames to terminate
+            boolean allFramesTerminated = jobManager.waitForFramesToTerminate(job);
+            if (allFramesTerminated) {
+                boolean jobFinished = jobManager.shutdownJob(job);
+                if(jobFinished) {
+                    logger.info("Job finished: " + job.getName());
+    
+                    /*
+                    * Send mail after all frames have been stopped and job is finished
+                    */
+                    emailSupport.sendShutdownEmail(job);
+                }
+            }
+        }
+        catch (NullPointerException e) {
+            /*
+             * Do not propagate this exception to RQD.  This
+             * usually means the cue lost connectivity to
+             * the host and cleared out the record of the proc.
+             * If this is propagated back to RQD, RQD will
+             * keep retrying the operation forever.
+             */
+            logger.info("failed to acquire data needed to " +
+                    "process completed frame: " +
+                    report.getFrame().getFrameName() + " in job " +
+                    report.getFrame().getJobName() + "," + e);
         }
         catch (EmptyResultDataAccessException e) {
             /*
