@@ -56,6 +56,8 @@ def displayState(job):
     @return: The status of the job for display"""
     if job.data.state == opencue.api.job_pb2.FINISHED:
         return "Finished"
+    if job.data.state == opencue.api.job_pb2.SHUTDOWN:
+        return "Killing"
     if job.data.is_paused:
         return "Paused"
     if job.data.job_stats.dead_frames > 0:
@@ -97,6 +99,7 @@ class JobMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
                            "In Progress \t The job is on the queue\n"
                            "Failing \t The job has dead frames\n"
                            "Paused \t The job has been paused\n"
+                           "Killing \t The job is being killed\n"
                            "Finished \t The job has finished and is no longer in the queue")
         self.addColumn("Done/Total", 90, id=5,
                        data=lambda job: "%d of %d" % (job.data.job_stats.succeeded_frames,
