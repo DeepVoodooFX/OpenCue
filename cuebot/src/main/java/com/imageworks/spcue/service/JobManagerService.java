@@ -355,6 +355,10 @@ public class JobManagerService implements JobManager {
         return allFramesTerminated;
     }
 
+    public boolean hasTerminatingFrames(JobInterface job) {
+        return jobDao.hasTerminatingFrames(job);
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
     public boolean shutdownJob(JobInterface job) {
         // See JobManagerSupport

@@ -41,6 +41,9 @@ def run_dummy_process(scenario, wait_time):
         if should_exit or (current_time - start_time >= wait_time):
             if scenario == "success":
                 logger.info("Exiting successfully")
+                for i in range(60):
+                    logger.info(f"Sleeping for {i} seconds")
+                    time.sleep(1)
                 sys.exit(0)
             elif scenario == "failure":
                 logger.info("Exiting with failure")

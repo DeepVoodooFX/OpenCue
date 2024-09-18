@@ -498,5 +498,11 @@ public interface JobManager {
      * @param layer
      */
     List<LimitEntity> getLayerLimits(LayerInterface layer);
+
+    /**
+     * Return a boolean if a job has termiating frames.
+     * @param job
+     */
+    boolean hasTerminatingFrames(JobInterface job);
 }
 
