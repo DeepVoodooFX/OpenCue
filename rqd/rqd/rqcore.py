@@ -299,26 +299,53 @@ class FrameAttendantThread(threading.Thread):
         rqd.rqutil.permissionsUser(self.runFrame.uid, self.runFrame.gid)
         for proc in psutil.process_iter(['pid', 'cmdline']):
             try:
-                if command in ' '.join(proc.cmdline()):
+                # Normalize the command string by splitting and joining with single spaces
+                normalized_command = ' '.join(command.split())
+                # Normalize the process's command line in the same way
+                normalized_proc_cmdline = ' '.join(proc.cmdline())
+                normalized_proc_cmdline = ' '.join(normalized_proc_cmdline.split())
+                # Compare the normalized command strings
+                if normalized_command == normalized_proc_cmdline:
                     matching_pids.add(proc.pid)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-        
+
         rqd.rqutil.permissionsLow()
 
-        if len(matching_pids) == 0:
-            log.warning(f"Failed to find child process for command {command}")
-            log.info(f"Using top process (PID: {top_pid}) as command process")
-            self.commandProcess = psutil.Process(top_pid)
-            self.commandProcess.is_child_process = False
-            self.frameInfo.pid = top_pid
-            return
-            
         # Get all descendant processes of the top-level PID
         all_descendant_processes = self.__get_all_children(top_pid)
         descendant_pids = set(proc.pid for proc in all_descendant_processes)
 
-        # Find matching processes that are descendants of the top-level process
+        if len(matching_pids) == 0 and len(descendant_pids) > 0:
+            log.warning(f"Failed to find child process for command {command}")
+            log.info("Using lowest level descendant process as command process")
+            # Find the leaf processes (processes without any children)
+            leaf_processes = [proc for proc in all_descendant_processes if not proc.children()]
+            if leaf_processes:
+                # Choose one of the leaf processes (e.g., the first one)
+                lowest_level_proc = leaf_processes[0]
+                try:
+                    self.commandProcess = psutil.Process(lowest_level_proc.pid)
+                    self.commandProcess.is_child_process = True
+                    self.frameInfo.pid = lowest_level_proc.pid
+                    self.frameInfo.process_ready.set()
+                except psutil.NoSuchProcess:
+                    log.error(f"Leaf process with PID {lowest_level_proc.pid} no longer exists")
+                    self.commandProcess = None
+            return
+                
+        if len(matching_pids) == 0:
+            log.error(f"No processes found for command {command}")
+            try:
+                self.commandProcess = psutil.Process(top_pid)
+                self.commandProcess.is_child_process = False
+                self.frameInfo.pid = top_pid
+                self.frameInfo.process_ready.set()
+            except psutil.NoSuchProcess:
+                log.error(f"Process with PID {top_pid} no longer exists")
+                self.commandProcess = None
+            return
+
         current_pids = matching_pids.intersection(descendant_pids)
 
         # Add new processes to our set
@@ -327,6 +354,7 @@ class FrameAttendantThread(threading.Thread):
                 try:
                     self.commandProcess = psutil.Process(pid)
                     self.frameInfo.pid = pid
+                    self.frameInfo.process_ready.set()
                     self.commandProcess.is_child_process = True
                     break
                 except psutil.NoSuchProcess:
@@ -344,7 +372,6 @@ class FrameAttendantThread(threading.Thread):
     def __wait_for_command_process_to_exit(self):
         """Wait for the command process to exit, or kill it if it takes too long"""
         wait_start = time.time()
-
         while self.commandProcess is None:
             if time.time() - wait_start > 30:
                 return None

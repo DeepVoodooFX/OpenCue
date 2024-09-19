@@ -31,6 +31,7 @@ import os
 import platform
 import subprocess
 import time
+import threading
 
 import grpc
 
@@ -79,6 +80,7 @@ class RunningFrame(object):
         self.killSignal = runFrame.kill_signal
         self.childrenProcs = {}
         self.kill_timeout_start = None
+        self.process_ready = threading.Event()
 
     def runningFrameInfo(self):
         """Returns the RunningFrameInfo object"""
@@ -153,39 +155,50 @@ class RunningFrame(object):
                 "Kill requested before frameAttendantThread is created for: %s", self.frameId)
         elif self.frameAttendantThread.is_alive() and self.pid is None:
             log.warning("Kill requested before pid is available for: %s", self.frameId)
-        elif self.frameAttendantThread.is_alive():
-            # pylint: disable=broad-except
-            try:
-                if not self.killMessage and message:
-                    self.killMessage = message
-                rqd.rqutil.permissionsHigh()
-                try:
-                    if platform.system() == "Windows":
-                        # TODO: UPDATE THIS TO USE THE NEW KILL SIGNAL
-                        # if self.killSignal == 15:
-                        #     subprocess.Popen('taskkill /T /PID %i' % self.pid, shell=True)
-                        # else:
-                        subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
-                    else:
-                        log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)
-                        os.kill(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
+            # wait for the process to be ready
+            self.process_ready.wait()
 
-                    self.kill_timeout_start = time.time()
-                finally:
-                    log.warning(
-                        "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)
-                    rqd.rqutil.permissionsLow()
-            except OSError as e:
-                log.warning(
-                    "kill() tried to kill a non-existant pid for: %s Error: %s", self.frameId, e)
-            # pylint: disable=broad-except
-            except Exception as e:
-                log.warning("kill() encountered an unknown error: %s", e)
+            if self.pid:
+                self.handle_kill(message)
+            else:
+                log.critical("Failed to kill frameId=%s, pid is not available", self.frameId)
+                        
+        elif self.frameAttendantThread.is_alive():
+            self.handle_kill(message)
         else:
             log.warning(
                 "Kill requested after frameAttendantThread has exited for: %s", self.frameId)
             self.rqCore.deleteFrame(self.frameId)
-    
+
+    def handle_kill(self, message=""):
+        # pylint: disable=broad-except
+        try:
+            if not self.killMessage and message:
+                self.killMessage = message
+            rqd.rqutil.permissionsHigh()
+            try:
+                if platform.system() == "Windows":
+                    # TODO: UPDATE THIS TO USE THE NEW KILL SIGNAL
+                    # if self.killSignal == 15:
+                    #     subprocess.Popen('taskkill /T /PID %i' % self.pid, shell=True)
+                    # else:
+                    subprocess.Popen('taskkill /F /T /PID %i' % self.pid, shell=True)
+                else:
+                    log.info("Killing frameId=%s pid=%s with signal %s", self.frameId, self.pid, self.killSignal)
+                    os.kill(self.pid, rqd.rqconstants.get_kill_signal_value(self.killSignal))
+
+                self.kill_timeout_start = time.time()
+            finally:
+                log.warning(
+                    "kill() successfully killed frameId=%s pid=%s", self.frameId, self.pid)
+                rqd.rqutil.permissionsLow()
+        except OSError as e:
+            log.warning(
+                "kill() tried to kill a non-existant pid for: %s Error: %s", self.frameId, e)
+        # pylint: disable=broad-except
+        except Exception as e:
+            log.warning("kill() encountered an unknown error: %s", e)
+
     def is_kill_in_progress(self):
         return self.kill_timeout_start is not None
 

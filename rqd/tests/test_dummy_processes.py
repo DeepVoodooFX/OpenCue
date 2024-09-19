@@ -197,7 +197,7 @@ def main():
                         help="Time to wait before terminating the job (in seconds)")
     args = parser.parse_args()
 
-    total_iterations = 30
+    total_iterations = 50
     for iteration in range(1, total_iterations + 1):
         logger.info(f"=== Starting iteration {iteration} of {total_iterations} ===")
         jobs = []
