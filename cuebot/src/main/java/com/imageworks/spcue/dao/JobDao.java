@@ -130,6 +130,14 @@ public interface JobDao {
     boolean isJobComplete(JobInterface job);
 
     /**
+     * Returns true if the job has been killed.
+     *
+     * @param job
+     * @return
+     */
+    boolean isJobKilled(JobInterface job);
+
+    /**
      * Inserts a JobDetail.  The job will not be pending until its
      * activated.
      *
@@ -371,6 +379,14 @@ public interface JobDao {
      * @param b
      */
     void updateAutoEat(JobInterface j, boolean b);
+
+    /**
+     * Update a job's killed state
+     *
+     * @param j
+     * @param b
+     */
+    void updateKilled(JobInterface j, boolean b);
 
     /**
      * Updates the int_max_retries column with the value of

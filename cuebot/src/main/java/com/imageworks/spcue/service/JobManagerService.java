@@ -98,6 +98,11 @@ public class JobManagerService implements JobManager {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
+    public boolean isJobKilled(JobInterface job) {
+        return jobDao.isJobKilled(job);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
     public boolean isLayerComplete(LayerInterface layer) {
         return layerDao.isLayerComplete(layer);
     }
@@ -174,6 +179,11 @@ public class JobManagerService implements JobManager {
     @Transactional(propagation = Propagation.REQUIRED)
     public void setJobPaused(JobInterface job, boolean paused) {
         jobDao.updatePaused(job, paused);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void setJobKilled(JobInterface job) {
+        jobDao.updateKilled(job, true);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

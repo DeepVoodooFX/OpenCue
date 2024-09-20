@@ -85,6 +85,9 @@ public class JobManagerSupport {
         }
 
         if (isManualKill) {
+
+            jobManager.setJobKilled(job);
+
             handleManualKill(job, source);
 
             if (jobManager.hasTerminatingFrames(job)) {
