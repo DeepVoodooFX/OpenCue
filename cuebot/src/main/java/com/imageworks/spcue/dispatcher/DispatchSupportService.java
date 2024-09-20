@@ -224,6 +224,10 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
     public boolean isJobDispatchable(JobInterface job, boolean local) {
 
+        if (jobDao.isJobKilled(job)) {
+            return false;
+        }
+
         if (!jobDao.hasPendingFrames(job)) {
             return false;
         }
@@ -239,6 +243,10 @@ public class DispatchSupportService implements DispatchSupport {
     @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
     public boolean isJobBookable(JobInterface job) {
 
+        if (jobDao.isJobKilled(job)) {
+            return false;
+        }
+
         if (!jobDao.hasPendingFrames(job)) {
             return false;
         }
@@ -253,6 +261,10 @@ public class DispatchSupportService implements DispatchSupport {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, readOnly=true)
     public boolean isJobBookable(JobInterface job, int coreUnits, int gpuUnits) {
+
+        if (jobDao.isJobKilled(job)) {
+            return false;
+        }
 
         if (!jobDao.hasPendingFrames(job)) {
             return false;

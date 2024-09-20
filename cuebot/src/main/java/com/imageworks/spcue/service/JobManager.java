@@ -56,6 +56,13 @@ public interface JobManager {
     void setJobPaused(JobInterface job, boolean paused);
 
     /**
+     * Mark a job as killed.
+     *
+     * @param job
+     */
+    void setJobKilled(JobInterface job);
+
+    /**
      *
      * @param id
      * @return
@@ -85,6 +92,14 @@ public interface JobManager {
      * @return
      */
     boolean isJobComplete(JobInterface job);
+
+    /**
+     * Returns true if the job has been killed
+     *
+     * @param job
+     * @return
+     */
+    boolean isJobKilled(JobInterface job);
 
     /**
      * Returns true if the layer is complete.

@@ -188,10 +188,11 @@ public class FrameCompleteHandler {
                     report.getFrame().getMaxRss())) {
 
                     logger.info("stopped terminating frame: " + frame.state + " -> " + newFrameState);
-                    if (!jobManager.hasTerminatingFrames(job)) {
+                    if (jobManager.isJobKilled(job) && !jobManager.hasTerminatingFrames(job) ) {
                         jobManagerSupport.queueShutdownJob(job, new Source("natural"), false);
                     }
                 }
+
                 if (redirectManager.hasRedirect(proc)) {
                     dispatchQueue.execute(new KeyRunnable(key) {
                         @Override

@@ -192,6 +192,18 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
                 Integer.class, job.getJobId()) == 0;
     }
 
+    private static final String IS_JOB_KILLED =
+        "SELECT " +
+            "b_killed " +
+        "FROM " +
+            "job " +
+         "WHERE " +
+             "pk_job=?";
+    @Override
+    public boolean isJobKilled(JobInterface job) {
+        return getJdbcTemplate().queryForObject(IS_JOB_KILLED, Boolean.class, job.getJobId());
+    }
+
     public static final String GET_JOB=
         "SELECT " +
             "job.pk_job, "+
@@ -415,6 +427,12 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
     }
 
     @Override
+    public void updateKilled(JobInterface j, boolean b) {
+        getJdbcTemplate().update("UPDATE job SET b_killed=? WHERE pk_job=?",
+                b, j.getJobId());
+    }
+
+    @Override
     public void updateState(JobInterface job, JobState state) {
         getJdbcTemplate().update("UPDATE job SET str_state=? WHERE pk_job=?",
                 state.toString(), job.getJobId());
@@ -613,7 +631,7 @@ public class JobDaoJdbc extends JdbcDaoSupport implements JobDao {
 
     private static final String HAS_TERMINATING_FRAMES =
         "SELECT " +
-            "(int_terminating_count + int_running_count) " +
+            "int_terminating_count " +
         "FROM " +
             "job,"+
             "job_stat " +
