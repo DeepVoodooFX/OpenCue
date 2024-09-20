@@ -478,7 +478,6 @@ class FrameAttendantThread(threading.Thread):
                 while True:
                     try:
                         returncode = commandProcess.wait(timeout=5)
-                        print(f"proc ########### {returncode}")
                         break
                     except psutil.TimeoutExpired:
                         if frameInfo.is_kill_in_progress() and time.time() >= frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION:
