@@ -294,43 +294,60 @@ class FrameAttendantThread(threading.Thread):
             
     def __find_process_by_command(self, top_pid, command):
         """Find the child command process running for the specified command process group."""
+        max_retries = 3
+        retry_delay = 2  # seconds between retries
         matching_pids = set()
-
+        
         rqd.rqutil.permissionsUser(self.runFrame.uid, self.runFrame.gid)
-        for proc in psutil.process_iter(['pid', 'cmdline']):
-            try:
-                # Normalize the command string by splitting and joining with single spaces
-                normalized_command = ' '.join(command.split())
-                # Normalize the process's command line in the same way
-                normalized_proc_cmdline = ' '.join(proc.cmdline())
-                normalized_proc_cmdline = ' '.join(normalized_proc_cmdline.split())
-                # Compare the normalized command strings
-                if normalized_command == normalized_proc_cmdline:
-                    matching_pids.add(proc.pid)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
-
+        
+        for attempt in range(1, max_retries + 1):
+            current_matching_pids = set()
+    
+            for proc in psutil.process_iter(['pid', 'cmdline']):
+                try:
+                    # Normalize the command string by splitting and joining with single spaces
+                    normalized_command = ' '.join(command.split())
+                    # Normalize the process's command line in the same way
+                    normalized_proc_cmdline = ' '.join(proc.cmdline())
+                    normalized_proc_cmdline = ' '.join(normalized_proc_cmdline.split())
+                    # Compare the normalized command strings
+                    if normalized_command == normalized_proc_cmdline:
+                        current_matching_pids.add(proc.pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+    
+            if current_matching_pids:
+                matching_pids = current_matching_pids
+                break  # Exit the retry loop since matches are found
+            else:
+                print(f"No matching processes found on attempt {attempt}")
+                if attempt < max_retries:
+                    print(f"Retrying after {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    print("Max retries reached without finding matching processes")
+    
         rqd.rqutil.permissionsLow()
-
-        # Get all descendant processes of the top-level PID
-        all_descendant_processes = self.__get_all_children(top_pid)
-        descendant_pids = set(proc.pid for proc in all_descendant_processes)
-                
+    
         if len(matching_pids) == 0:
             log.error(f"No processes found for command {command}")
             try:
                 self.commandProcess = psutil.Process(top_pid)
                 self.commandProcess.is_child_process = False
-                self.commandProcess.exitStatus = 1
+                self.commandProcess.exitStatus = 1  # Note: As discussed earlier, consider using a wrapper
                 self.frameInfo.pid = top_pid
                 self.frameInfo.process_ready.set()
             except psutil.NoSuchProcess:
                 log.error(f"Process with PID {top_pid} no longer exists")
                 self.commandProcess = None
             return
-
+    
+        # Proceed with descendant PIDs
+        all_descendant_processes = self.__get_all_children(top_pid)
+        descendant_pids = set(proc.pid for proc in all_descendant_processes)
+                
         current_pids = matching_pids.intersection(descendant_pids)
-
+    
         # Add new processes to our set
         for pid in current_pids:
             if self.commandProcess is None:
@@ -343,15 +360,16 @@ class FrameAttendantThread(threading.Thread):
                 except psutil.NoSuchProcess:
                     log.warning(f"Process {pid} no longer exists")
                     continue
-
+    
     def __get_all_children(self, pid):
         try:
             parent = psutil.Process(pid)
             children = parent.children(recursive=True)
-            return [parent] + children
+            all_processes = [parent] + children
+            return all_processes
         except psutil.NoSuchProcess:
             return []
-
+    
     def __wait_for_command_process_to_exit(self):
         """Wait for the command process to exit, or kill it if it takes too long"""
         wait_start = time.time()
@@ -364,7 +382,7 @@ class FrameAttendantThread(threading.Thread):
             try:
                 # Wait for the process to terminate
                 # After wait, get the exit code
-                exit_code = self.commandProcess.wait(timeout=60)
+                exit_code = self.commandProcess.wait(timeout=180)
                 return exit_code
             except psutil.TimeoutExpired:
                 if self.frameInfo.is_kill_in_progress() and time.time() >= self.frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION:
@@ -443,10 +461,7 @@ class FrameAttendantThread(threading.Thread):
         if self.commandProcess is not None and self.commandProcess.is_child_process:
             self.__wait_for_command_process_to_exit()
 
-        if self.commandProcess.exitStatus is None:
-            returncode = frameInfo.forkedCommand.wait()
-        else:
-            returncode = self.commandProcess.exitStatus
+        returncode = frameInfo.forkedCommand.wait()
     
         if returncode < 0:
             frameInfo.exitStatus = 1
@@ -968,7 +983,7 @@ class RqCore(object):
         @type   runFrame: RunFrame
         @param  runFrame: rqd_pb2.RunFrame"""
         log.info("Running command %s for %s", runFrame.command, runFrame.frame_id)
-        log.debug(runFrame)
+        #log.debug(runFrame)
 
         #
         # Check for reasons to abort launch
