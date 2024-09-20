@@ -315,30 +315,13 @@ class FrameAttendantThread(threading.Thread):
         # Get all descendant processes of the top-level PID
         all_descendant_processes = self.__get_all_children(top_pid)
         descendant_pids = set(proc.pid for proc in all_descendant_processes)
-
-        if len(matching_pids) == 0 and len(descendant_pids) > 0:
-            log.warning(f"Failed to find child process for command {command}")
-            log.info("Using lowest level descendant process as command process")
-            # Find the leaf processes (processes without any children)
-            leaf_processes = [proc for proc in all_descendant_processes if not proc.children()]
-            if leaf_processes:
-                # Choose one of the leaf processes (e.g., the first one)
-                lowest_level_proc = leaf_processes[0]
-                try:
-                    self.commandProcess = psutil.Process(lowest_level_proc.pid)
-                    self.commandProcess.is_child_process = True
-                    self.frameInfo.pid = lowest_level_proc.pid
-                    self.frameInfo.process_ready.set()
-                except psutil.NoSuchProcess:
-                    log.error(f"Leaf process with PID {lowest_level_proc.pid} no longer exists")
-                    self.commandProcess = None
-            return
                 
         if len(matching_pids) == 0:
             log.error(f"No processes found for command {command}")
             try:
                 self.commandProcess = psutil.Process(top_pid)
                 self.commandProcess.is_child_process = False
+                self.commandProcess.exitStatus = 1
                 self.frameInfo.pid = top_pid
                 self.frameInfo.process_ready.set()
             except psutil.NoSuchProcess:
@@ -460,7 +443,10 @@ class FrameAttendantThread(threading.Thread):
         if self.commandProcess is not None and self.commandProcess.is_child_process:
             self.__wait_for_command_process_to_exit()
 
-        returncode = frameInfo.forkedCommand.wait()
+        if self.commandProcess.exitStatus is None:
+            returncode = frameInfo.forkedCommand.wait()
+        else:
+            returncode = self.commandProcess.exitStatus
     
         if returncode < 0:
             frameInfo.exitStatus = 1
@@ -593,6 +579,8 @@ class FrameAttendantThread(threading.Thread):
         log.info("Monitor frame started for frameId=%s", self.frameId)
 
         runFrame = self.runFrame
+        # Store frame in cache and register servant
+        self.rqCore.storeFrame(runFrame.frame_id, self.frameInfo)
 
         # pylint: disable=too-many-nested-blocks
         try:
@@ -673,9 +661,6 @@ class FrameAttendantThread(threading.Thread):
 
                 finally:
                     rqd.rqutil.permissionsLow()
-
-                # Store frame in cache and register servant
-                self.rqCore.storeFrame(runFrame.frame_id, self.frameInfo)
 
                 if platform.system() == "Linux":
                     self.runLinux()
