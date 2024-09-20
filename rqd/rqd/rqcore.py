@@ -150,15 +150,20 @@ class FrameAttendantThread(threading.Thread):
                 commandFile = os.path.join(
                     rqd_tmp_dir,
                     'cmd-%s-%s.bat' % (self.runFrame.frame_id, time.time()))
+
+                raise NotImplementedError("Windows command file creation not implemented")
             else:
-                commandFile = os.path.join(tempfile.gettempdir(),
-                                           'rqd-cmd-%s-%s' % (self.runFrame.frame_id, time.time()))
+                baseName = f"rqd-cmd-{self.runFrame.frame_id}-{time.time()}"
+                commandFile = os.path.join(tempfile.gettempdir(), baseName)
+                pidFile = os.path.join(tempfile.gettempdir(), f"{baseName}.pid")
+                command = f"({command}) & PID=$! && echo $PID > '{pidFile}' && wait $PID"
             rqexe = open(commandFile, "w")
             self._tempLocations.append(commandFile)
+            self._tempLocations.append(pidFile)
             rqexe.write(command)
             rqexe.close()
             os.chmod(commandFile, 0o777)
-            return commandFile
+            return (commandFile, pidFile)
         # pylint: disable=broad-except
         except Exception as e:
             log.critical(
@@ -423,11 +428,12 @@ class FrameAttendantThread(threading.Thread):
 
         rqd.rqutil.permissionsHigh()
         try:
+            commandFile, pidFile = self._createCommandFile(runFrame.command)
             if rqd.rqconstants.RQD_BECOME_JOB_USER:
                 tempCommand += ["/bin/su", runFrame.user_name, rqd.rqconstants.SU_ARGUMENT,
-                                '"' + self._createCommandFile(runFrame.command) + '"']
+                                '"' + commandFile + '"']
             else:
-                tempCommand += [self._createCommandFile(runFrame.command)]
+                tempCommand += [commandFile]
 
             if rqd.rqconstants.RQD_PREPEND_TIMESTAMP:
                 file_descriptor = subprocess.PIPE
@@ -453,14 +459,41 @@ class FrameAttendantThread(threading.Thread):
         if rqd.rqconstants.RQD_PREPEND_TIMESTAMP:
             pipe_to_file(frameInfo.forkedCommand.stdout, frameInfo.forkedCommand.stderr, self.rqlog)
 
-        while self.commandProcess is None:
-            self.__find_process_by_command(frameInfo.forkedCommand.pid, runFrame.command)
-            time.sleep(0.1)
+        commandPid = None
+        while True:
+            try:
+                commandPid = int(open(pidFile, 'r').read())
+                log.info(f"Frame command pid: {frameInfo.frameId}: {commandPid}")
+                break
+            except (IOError, ValueError):
+                time.sleep(0.5)
 
-        if self.commandProcess is not None and self.commandProcess.is_child_process:
-            self.__wait_for_command_process_to_exit()
+        frameInfo.pid = commandPid
+        frameInfo.process_ready.set()
 
-        returncode = frameInfo.forkedCommand.wait()
+        returncode = None
+        if commandPid is not None:
+            try:
+                commandProcess = psutil.Process(commandPid)
+                while True:
+                    try:
+                        returncode = commandProcess.wait(timeout=5)
+                        print(f"proc ########### {returncode}")
+                        break
+                    except psutil.TimeoutExpired:
+                        if frameInfo.is_kill_in_progress() and time.time() >= frameInfo.kill_timeout_start + rqd.rqconstants.KILL_TIMEOUT_DURATION:
+                            # Gracefull kill failed, try to kill the process with SIGKILL
+                            rqd.rqutil.permissionsUser(runFrame.uid, runFrame.gid)
+                            commandProcess.send_signal(signal.SIGKILL)
+                            rqd.rqutil.permissionsLow()
+                            break
+            except psutil.NoSuchProcess:
+                # This is okay.  It just means we missed the process exiting.
+                # The correct return code will be returned below.
+                log.info("Process no longer exists")
+
+        if returncode is None:
+            returncode = frameInfo.forkedCommand.wait()
     
         if returncode < 0:
             frameInfo.exitStatus = 1
